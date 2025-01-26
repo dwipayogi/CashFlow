@@ -8,29 +8,29 @@ import { Input } from "@/components/input";
 
 import { colors } from "@/constants/colors";
 
-export default function AddTransaction() {
+export default function AddPlan() {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState("");
-  const [category, setCategory] = useState("");
 
-  function handleAddTransaction() {
+  function handleAddPlan() {
     router.push("/dashboard");
   }
 
   return (
     <View style={styles.container}>
-      <Header title="Add New Transaction" />
+      <Header title="Create New Plan" />
       <Text style={styles.label}>Name</Text>
       <Input placeholder="Name" value={name} onChangeText={setName} />
+      <Text style={styles.label}>Description</Text>
+      <Input placeholder="Description" value={description} onChangeText={setDescription} />
       <Text style={styles.label}>Amount</Text>
       <Input placeholder="Amount" value={amount} onChangeText={setAmount} />
       <Text style={styles.label}>Date</Text>
       <Input placeholder="Date" value={date} onChangeText={setDate} />
-      <Text style={styles.label}>Category</Text>
-      <Input placeholder="Category" value={category} onChangeText={setCategory} />
-      <Button style={styles.button} onPress={handleAddTransaction}>Add</Button>
+      <Button style={styles.button} onPress={handleAddPlan}>Create</Button>
     </View>
   )
 }

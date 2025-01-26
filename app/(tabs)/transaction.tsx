@@ -2,8 +2,10 @@ import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
 import { Link } from "expo-router";
 
+import { Header } from "@/components/header";
 import { Button } from "@/components/button";
 import { Card } from "@/components/card";
+
 import { colors } from "@/constants/colors";
 
 export default function Transaction() {
@@ -66,9 +68,7 @@ export default function Transaction() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Statictics</Text>
-      </View>
+      <Header title="Statictics" />
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.chart}>
           <BarChart
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.dark,
-    padding: 12,
+    padding: 20,
   },
   header: {
     padding: 20,

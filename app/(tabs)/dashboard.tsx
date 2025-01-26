@@ -69,9 +69,7 @@ export default function Dashboard() {
           ))}
         </View>
       </ScrollView>
-      <Link href="/add-transaction" asChild>
-        <Button style={styles.addTransactionButton}>Add Transaction</Button>
-      </Link>
+
     </>
   );
 }
@@ -142,10 +140,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.light,
     fontWeight: "bold",
-  },
-  addTransactionButton: {
-    position: "absolute",
-    bottom: 20,
-    right: 20,
   },
 });

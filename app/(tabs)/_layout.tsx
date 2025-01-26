@@ -14,6 +14,7 @@ export default function Layout() {
       }}
     >
       <Tabs.Screen name="dashboard" />
+      <Tabs.Screen name="transaction" />
       <Tabs.Screen name="add-transaction" options={{ href: null }} />
     </Tabs>
   );

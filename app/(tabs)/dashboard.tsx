@@ -1,9 +1,7 @@
 import { View, ScrollView, Text, StyleSheet } from "react-native";
-import { Link } from "expo-router";
 
 import { colors } from "@/constants/colors";
 import { Card } from "@/components/card";
-import { Button } from "@/components/button";
 
 const transactions = [
   {

@@ -1,34 +1,42 @@
+import { useState } from "react";
 import { View, Text, StyleSheet, Alert, ActivityIndicator } from "react-native";
-import { colors } from "@/constants/colors";
+import { Link, router } from "expo-router";
+import { useAuth } from "@/contexts/authContext";
+
 import { Input } from "@/components/input";
 import { Button } from "@/components/button";
-import { Link } from "expo-router";
-import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { colors } from "@/constants/colors";
 
 export default function Register() {
+  const { signUp, session } = useAuth();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleRegister() {
-    setLoading(true)
-    const {
-      data: { session },
-      error,
-    } = await supabase.auth.signUp({
-      email: email,
-      password: password,
-    })
-
-    if (error) Alert.alert(error.message)
-    if (!session) Alert.alert('Please check your inbox for email verification!')
-    setLoading(false)
+    setLoading(true);
+    await signUp(email, password);
+    if (!session) {
+      setLoading(false);
+      return (
+        <View style={styles.loading}>
+          <Text style={styles.text}>
+            Please check your inbox for email verification!
+          </Text>
+        </View>
+      );
+    }
+    router.push("/(auth)/login");
   }
 
-  if (loading) return <ActivityIndicator size="large" color={colors.primary} />;
-  
+  if (loading)
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Create an account</Text>
@@ -37,14 +45,30 @@ export default function Register() {
       <Text style={styles.subtitle}>Email</Text>
       <Input placeholder="Email" value={email} onChangeText={setEmail} />
       <Text style={styles.subtitle}>Password</Text>
-      <Input placeholder="Password" value={password} onChangeText={setPassword} />
-      <Button onPress={handleRegister}>Register</Button>
-      <Text style={styles.text}>Already have an account? <Link href="/login" style={styles.link}>Login</Link></Text>
+      <Input
+        placeholder="Password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+      />
+      <Button onPress={() => handleRegister()}>Register</Button>
+      <Text style={styles.text}>
+        Already have an account?{" "}
+        <Link href="/login" style={styles.link}>
+          Login
+        </Link>
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  loading: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.dark,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.dark,

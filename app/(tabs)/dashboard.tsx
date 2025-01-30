@@ -1,4 +1,5 @@
 import { View, ScrollView, Text, StyleSheet } from "react-native";
+import { useAuth } from "@/contexts/authContext";
 
 import { colors } from "@/constants/colors";
 import { Card } from "@/components/card";
@@ -36,38 +37,44 @@ const transactions = [
     expense: true,
     amount: 853000,
   },
-]
+];
 
 export default function Dashboard() {
+  const { session } = useAuth();
+
   return (
-    <>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Hello,</Text>
-          <Text style={styles.name}>John Doe</Text>
-        </View>
-        <View style={styles.content}>
-          <Text style={styles.balance}>Total Balance</Text>
-          <Text style={styles.balanceAmount}>Rp100.000.000</Text>
-          <View style={styles.income}>
-            <View style={styles.incomeItem}>
-              <Text style={styles.incomeTitle}>Income</Text>
-              <Text style={styles.incomeAmount}>Rp100.000.000</Text>
-            </View>
-            <View style={styles.incomeItem}>
-              <Text style={styles.incomeTitle}>Expense</Text>
-              <Text style={styles.expenseAmount}>Rp100.000.000</Text>
-            </View>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Hello,</Text>
+        <Text style={styles.name}>{session?.user.email}</Text>
+      </View>
+      <View style={styles.content}>
+        <Text style={styles.balance}>Total Balance</Text>
+        <Text style={styles.balanceAmount}>Rp100.000.000</Text>
+        <View style={styles.income}>
+          <View style={styles.incomeItem}>
+            <Text style={styles.incomeTitle}>Income</Text>
+            <Text style={styles.incomeAmount}>Rp100.000.000</Text>
+          </View>
+          <View style={styles.incomeItem}>
+            <Text style={styles.incomeTitle}>Expense</Text>
+            <Text style={styles.expenseAmount}>Rp100.000.000</Text>
           </View>
         </View>
-        <View style={styles.transaction}>
-          <Text style={styles.transactionTitle}>Recent Transactions</Text>
-          {transactions.map((transaction) => (
-            <Card key={transaction.id} title={transaction.title} date={transaction.date} amount={transaction.amount} expense={transaction.expense} />
-          ))}
-        </View>
-      </ScrollView>
-    </>
+      </View>
+      <View style={styles.transaction}>
+        <Text style={styles.transactionTitle}>Recent Transactions</Text>
+        {transactions.map((transaction) => (
+          <Card
+            key={transaction.id}
+            title={transaction.title}
+            date={transaction.date}
+            amount={transaction.amount}
+            expense={transaction.expense}
+          />
+        ))}
+      </View>
+    </ScrollView>
   );
 }
 

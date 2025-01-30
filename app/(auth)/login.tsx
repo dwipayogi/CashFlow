@@ -1,46 +1,34 @@
 import { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  AppState,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { Link } from "expo-router";
+import { useAuth } from "@/contexts/authContext";
+
 import { colors } from "@/constants/colors";
 import { Input } from "@/components/input";
 import { Button } from "@/components/button";
 
-import { supabase } from "@/lib/supabase";
-import { Link, useRouter } from "expo-router";
-
-AppState.addEventListener("change", (state) => {
-  if (state === "active") {
-    supabase.auth.startAutoRefresh();
-  } else {
-    supabase.auth.stopAutoRefresh();
-  }
-});
-
 export default function Login() {
-  const router = useRouter();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleLogin() {
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
-    });
-
-    if (error) Alert.alert(error.message);
+    try {
+      await signIn(email, password);
+    } catch (error: any) {
+      Alert.alert("Error", error.message);
+    }
     setLoading(false);
-    router.push("/dashboard");
   }
 
-  if (loading) return <ActivityIndicator size="large" color={colors.primary} />;
+  if (loading)
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
 
   return (
     <View style={styles.container}>
@@ -54,7 +42,7 @@ export default function Login() {
         onChangeText={setPassword}
         secureTextEntry
       />
-      <Button onPress={handleLogin}>Login</Button>
+      <Button onPress={() => handleLogin()}>Login</Button>
       <Text style={styles.text}>
         Don't have an account?{" "}
         <Link href="/register" style={styles.link}>
@@ -66,6 +54,12 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
+  loading: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.dark,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.dark,

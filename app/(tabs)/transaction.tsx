@@ -3,7 +3,6 @@ import { BarChart } from "react-native-gifted-charts";
 import { Link } from "expo-router";
 
 import { Header } from "@/components/header";
-import { Button } from "@/components/button";
 import { Card } from "@/components/card";
 
 import { colors } from "@/constants/colors";
@@ -151,7 +150,7 @@ export default function Transaction() {
         </View>
       </ScrollView>
       <Link href="/add-transaction" asChild>
-        <Button style={styles.addTransactionButton}>Add Transaction</Button>
+        <Text style={styles.addTransactionButton}>Add Transaction</Text>
       </Link>
     </View>
   );
@@ -198,5 +197,13 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 20,
     right: 20,
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    color: colors.dark,
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

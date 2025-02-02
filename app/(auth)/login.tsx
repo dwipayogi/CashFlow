@@ -1,25 +1,17 @@
 import { useState } from "react";
-import { View, Text, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet,  ActivityIndicator } from "react-native";
 import { Link } from "expo-router";
-import { useAuth } from "@/contexts/authContext";
 
 import { colors } from "@/constants/colors";
 import { Input } from "@/components/input";
 import { Button } from "@/components/button";
 
 export default function Login() {
-  const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleLogin() {
-    setLoading(true);
-    try {
-      await signIn(email, password);
-    } catch (error: any) {
-      Alert.alert("Error", error.message);
-    }
     setLoading(false);
   }
 

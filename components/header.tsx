@@ -1,5 +1,3 @@
-import { Link } from "expo-router";
-import { Feather } from '@expo/vector-icons';
 import { View, Text, StyleSheet } from "react-native";
 import { colors } from "@/constants/colors";
 

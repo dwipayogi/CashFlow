@@ -1,14 +1,9 @@
 import { TouchableOpacity, View, StyleSheet } from "react-native";
-import { Redirect, Tabs, router } from "expo-router";
+import { Tabs, router } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { colors } from "@/constants/colors";
-import { useAuth } from "@/contexts/authContext";
 
 export default function Layout() {
-  const { session } = useAuth();
-
-  if (!session) return <Redirect href="/(auth)/login" />;
-
   return (
       <Tabs
         screenOptions={{

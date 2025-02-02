@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { Button } from "@/components/button";
+
 import { colors } from "@/constants/colors";
 import { Link } from "expo-router";
 
@@ -9,7 +9,7 @@ export default function App() {
       <Text style={styles.title}>CashFLow</Text>
       <Text style={styles.subtitle}>Your Financial Intelligence Partner</Text>
       <Link href="/register" asChild>
-        <Button>Register</Button>
+        <Text style={styles.button}>Register</Text>
       </Link>
     </View>
   );
@@ -31,5 +31,18 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 18,
     color: colors.white,
+  },
+  button: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    color: colors.dark,
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

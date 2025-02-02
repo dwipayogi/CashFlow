@@ -1,5 +1,4 @@
 import { View, ScrollView, Text, StyleSheet } from "react-native";
-import { useAuth } from "@/contexts/authContext";
 
 import { colors } from "@/constants/colors";
 import { Card } from "@/components/card";
@@ -40,13 +39,12 @@ const transactions = [
 ];
 
 export default function Dashboard() {
-  const { session } = useAuth();
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <Text style={styles.title}>Hello,</Text>
-        <Text style={styles.name}>{session?.user.email}</Text>
+        <Text style={styles.name}>Dwipa Yogi</Text>
       </View>
       <View style={styles.content}>
         <Text style={styles.balance}>Total Balance</Text>

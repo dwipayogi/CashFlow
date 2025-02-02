@@ -1,14 +1,13 @@
 import { useState } from "react";
-import { View, Text, StyleSheet, Alert, ActivityIndicator } from "react-native";
-import { Link, router } from "expo-router";
-import { useAuth } from "@/contexts/authContext";
+import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
+import { Link, useRouter } from "expo-router";
 
 import { Input } from "@/components/input";
 import { Button } from "@/components/button";
 import { colors } from "@/constants/colors";
 
 export default function Register() {
-  const { signUp, session } = useAuth();
+  const router = useRouter();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,18 +15,6 @@ export default function Register() {
 
   async function handleRegister() {
     setLoading(true);
-    await signUp(email, password);
-    if (!session) {
-      setLoading(false);
-      return (
-        <View style={styles.loading}>
-          <Text style={styles.text}>
-            Please check your inbox for email verification!
-          </Text>
-        </View>
-      );
-    }
-    router.push("/(auth)/login");
   }
 
   if (loading)

@@ -1,10 +1,8 @@
-import { AuthProvider } from "@/contexts/authContext";
 import { colors } from "@/constants/colors";
 import { Stack } from "expo-router/stack";
 
 export default function Layout() {
   return (
-    <AuthProvider>
       <Stack
         screenOptions={{
           headerShown: false,
@@ -15,6 +13,5 @@ export default function Layout() {
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
       </Stack>
-    </AuthProvider>
   );
 }

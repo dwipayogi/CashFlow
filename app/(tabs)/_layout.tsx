@@ -1,5 +1,6 @@
 import { TouchableOpacity, View, StyleSheet } from "react-native";
 import { Tabs, router } from "expo-router";
+
 import { Feather } from "@expo/vector-icons";
 import { colors } from "@/constants/colors";
 

@@ -1,4 +1,7 @@
+import { useState, useEffect } from "react";
 import { View, ScrollView, Text, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { colors } from "@/constants/colors";
 import { Card } from "@/components/card";
@@ -39,12 +42,27 @@ const transactions = [
 ];
 
 export default function Dashboard() {
+  const router = useRouter();
+  const [token, setToken] = useState('');
+  const [username, setUsername] = useState('');
+  useEffect(() => {
+    async function getData() {
+      const token = await AsyncStorage.getItem('token');
+      setToken(token ?? '');
+      const username = await AsyncStorage.getItem('username');
+      setUsername(username ?? '');
+    }
+    getData();
+    if (!token) {
+      router.push("/login");
+    }
+  }, []);
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <Text style={styles.title}>Hello,</Text>
-        <Text style={styles.name}>Dwipa Yogi</Text>
+        <Text style={styles.name}>{username}</Text>
       </View>
       <View style={styles.content}>
         <Text style={styles.balance}>Total Balance</Text>

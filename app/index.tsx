@@ -33,16 +33,13 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   button: {
-    position: "absolute",
-    bottom: 20,
-    right: 20,
     backgroundColor: colors.primary,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 12,
-    alignItems: "center",
     color: colors.dark,
     fontSize: 16,
     fontWeight: "bold",
+    textAlign: "center",
   },
 });

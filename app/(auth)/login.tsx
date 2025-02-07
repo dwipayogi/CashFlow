@@ -1,17 +1,35 @@
 import { useState } from "react";
 import { View, Text, StyleSheet,  ActivityIndicator } from "react-native";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { colors } from "@/constants/colors";
 import { Input } from "@/components/input";
 import { Button } from "@/components/button";
+import { colors } from "@/constants/colors";
 
 export default function Login() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleLogin() {
+    setLoading(true);
+    const response = await fetch("http://localhost:3000/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await response.json();
+    if(data.token){
+      await AsyncStorage.setItem('token', data.token);
+      await AsyncStorage.setItem('username', data.user.username);
+      router.push("/dashboard");
+    } else {
+      alert(data.message);
+    }
     setLoading(false);
   }
 

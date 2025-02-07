@@ -35,7 +35,7 @@ export default function Chatbot() {
   async function sendMessage({ message }: { message: string }) {
     if (!message) return;
     setMessages((prevMessages) => [...prevMessages, { role: "user", message }]);
-    const response = await fetch("http://103.59.160.200:8080/chat", {
+    const response = await fetch("https://nutridetect-api.vercel.app/chat", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

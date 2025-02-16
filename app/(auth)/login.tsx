@@ -23,7 +23,7 @@ export default function Login() {
       body: JSON.stringify({ email, password }),
     });
     const data = await response.json();
-    if(data.token){
+    if(data.token && data.user.username) {
       await AsyncStorage.setItem('token', data.token);
       await AsyncStorage.setItem('username', data.user.username);
       router.push("/dashboard");

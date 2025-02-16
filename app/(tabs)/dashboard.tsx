@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { View, ScrollView, Text, StyleSheet } from "react-native";
-import { useRouter } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { colors } from "@/constants/colors";
@@ -42,20 +41,13 @@ const transactions = [
 ];
 
 export default function Dashboard() {
-  const router = useRouter();
-  const [token, setToken] = useState('');
   const [username, setUsername] = useState('');
   useEffect(() => {
     async function getData() {
-      const token = await AsyncStorage.getItem('token');
-      setToken(token ?? '');
       const username = await AsyncStorage.getItem('username');
       setUsername(username ?? '');
     }
     getData();
-    if (!token) {
-      router.push("/login");
-    }
   }, []);
 
   return (

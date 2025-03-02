@@ -6,6 +6,7 @@ import { Header } from "@/components/header";
 import { Card } from "@/components/card";
 
 import { colors } from "@/constants/colors";
+import { formatRupiah } from "@/functions/formatCurrency";
 
 export default function Transaction() {
   const barData = [
@@ -94,7 +95,7 @@ export default function Transaction() {
                     borderRadius: 4,
                   }}>
                   <Text style={{ color: colors.dark, fontSize: 12 }}>
-                    {item.value}
+                    {formatRupiah(item.value)}
                   </Text>
                 </View>
               );

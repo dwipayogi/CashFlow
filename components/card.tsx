@@ -1,6 +1,8 @@
 import { View, StyleSheet, Text } from "react-native";
 import { colors } from "@/constants/colors";
 
+import { formatRupiah } from "@/functions/formatCurrency";
+
 export const Card = ({ title, date, amount, expense }: { title: string; date: string; amount: number; expense: boolean }) => {
   return (
     <View style={styles.card}>
@@ -13,7 +15,7 @@ export const Card = ({ title, date, amount, expense }: { title: string; date: st
           </View>
         </View>
         <View>
-          <Text style={[styles.amount, expense ? styles.expenseAmount : styles.incomeAmount]}>Rp{amount}</Text>
+          <Text style={[styles.amount, expense ? styles.expenseAmount : styles.incomeAmount]}>{formatRupiah(amount)}</Text>
         </View>
       </View>
     </View>

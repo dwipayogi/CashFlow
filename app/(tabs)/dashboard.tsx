@@ -1,6 +1,4 @@
-import { useState, useEffect } from "react";
 import { View, ScrollView, Text, StyleSheet } from "react-native";
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { colors } from "@/constants/colors";
 import { Card } from "@/components/card";

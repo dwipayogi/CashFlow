@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { View, Text, StyleSheet,  ActivityIndicator } from "react-native";
 import { Link, useRouter } from "expo-router";
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Input } from "@/components/input";
 import { Button } from "@/components/button";

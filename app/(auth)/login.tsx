@@ -15,21 +15,6 @@ export default function Login() {
 
   async function handleLogin() {
     setLoading(true);
-    const response = await fetch("http://localhost:3000/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await response.json();
-    if(data.token && data.user.username) {
-      await AsyncStorage.setItem('token', data.token);
-      await AsyncStorage.setItem('username', data.user.username);
-      router.push("/dashboard");
-    } else {
-      alert(data.message);
-    }
     setLoading(false);
   }
 

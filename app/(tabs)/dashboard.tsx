@@ -41,20 +41,11 @@ const transactions = [
 ];
 
 export default function Dashboard() {
-  const [username, setUsername] = useState('');
-  useEffect(() => {
-    async function getData() {
-      const username = await AsyncStorage.getItem('username');
-      setUsername(username ?? '');
-    }
-    getData();
-  }, []);
-
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <Text style={styles.title}>Hello,</Text>
-        <Text style={styles.name}>{username}</Text>
+        <Text style={styles.name}>Dwipayogi</Text>
       </View>
       <View style={styles.content}>
         <Text style={styles.balance}>Total Balance</Text>

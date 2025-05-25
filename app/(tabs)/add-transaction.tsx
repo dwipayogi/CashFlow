@@ -1,38 +1,142 @@
 import { useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { Header } from "@/components/header";
 import { Button } from "@/components/button";
 import { Input } from "@/components/input";
+import { CurrencyInput } from "@/components/currency-input";
 
 import { colors } from "@/constants/colors";
 
 export default function AddTransaction() {
   const router = useRouter();
-  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
-  const [date, setDate] = useState("");
   const [category, setCategory] = useState("");
+  const [type, setType] = useState("DEPOSIT");
+  const [loading, setLoading] = useState(false);
 
-  function handleAddTransaction() {
-    router.push("/dashboard");
+  async function handleAddTransaction() {
+    if (!description || !amount) {
+      Alert.alert("Error", "Description and amount are required");
+      return;
+    }
+
+    // Validate amount is a number
+    const amountNum = parseFloat(amount);
+    if (isNaN(amountNum) || amountNum <= 0) {
+      Alert.alert("Error", "Please enter a valid amount");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Get token for authenticated requests
+      const token = await AsyncStorage.getItem("userToken");
+
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      // API expects category as a string (for category name)
+      const response = await fetch("http://localhost:3000/api/transactions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          description,
+          amount: amountNum,
+          type,
+          category: category || undefined,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to add transaction");
+      }
+
+      // According to API.md, response contains message and data
+      console.log("Transaction created:", data.message);
+
+      router.push("/dashboard");
+    } catch (err: any) {
+      console.error("Error adding transaction:", err);
+      Alert.alert("Error", err.message || "Failed to add transaction");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
   }
 
   return (
     <View style={styles.container}>
       <Header title="Add New Transaction" />
-      <Text style={styles.label}>Name</Text>
-      <Input placeholder="Name" value={name} onChangeText={setName} />
+      <Text style={styles.label}>Description</Text>
+      <Input
+        placeholder="Description"
+        value={description}
+        onChangeText={setDescription}
+      />
       <Text style={styles.label}>Amount</Text>
-      <Input placeholder="Amount" value={amount} onChangeText={setAmount} />
-      <Text style={styles.label}>Date</Text>
-      <Input placeholder="Date" value={date} onChangeText={setDate} />
-      <Text style={styles.label}>Category</Text>
-      <Input placeholder="Category" value={category} onChangeText={setCategory} />
-      <Button style={styles.button} onPress={handleAddTransaction}>Add</Button>
+      <CurrencyInput
+        placeholder="Amount"
+        value={amount}
+        onChangeText={setAmount}
+      />
+      <Text style={styles.label}>Type</Text>
+      <View style={styles.typeButtonContainer}>
+        <Button textColor={type === "DEPOSIT" ? colors.dark : colors.primary}
+          style={[
+            styles.typeButton,
+            styles.leftButton,
+            type === "DEPOSIT" && styles.activeButton,
+          ]}
+          onPress={() => setType("DEPOSIT")}
+        >
+          Deposit
+        </Button>
+        <Button textColor={type === "WITHDRAWAL" ? colors.dark : colors.primary}
+          style={[
+            styles.typeButton,
+            styles.rightButton,
+            type === "WITHDRAWAL" && styles.activeButton,
+          ]}
+          onPress={() => setType("WITHDRAWAL")}
+        >
+          Withdrawal
+        </Button>
+      </View>
+      <Text style={styles.label}>Category (Optional)</Text>
+      <Input
+        placeholder="Category"
+        value={category}
+        onChangeText={setCategory}
+      />
+      <Button style={styles.button} onPress={handleAddTransaction}>
+        Add Transaction
+      </Button>
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -58,6 +162,31 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 16,
   },
+  typeButtonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 8,
+  },
+  typeButton: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  leftButton: {
+    backgroundColor: colors.dark,
+    borderWidth: 2,
+    borderColor: colors.primary,
+  },
+  rightButton: {
+    backgroundColor: colors.dark,
+    borderWidth: 2,
+    borderColor: colors.primary,
+  },
+  activeButton: {
+    backgroundColor: colors.primary,
+  },
+  loadingContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    flex: 1,
+  },
 });
-
-

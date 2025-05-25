@@ -1,8 +1,19 @@
 import { TextInput, StyleSheet, TextInputProps } from "react-native";
+import { useState } from "react";
 import { colors } from "@/constants/colors";
 
 export const Input = ({ style, ...props }: TextInputProps) => {
-  return <TextInput style={[styles.input, style]} placeholderTextColor={colors.light} {...props} />;
+  const [isFocused, setIsFocused] = useState(false);
+
+  return (
+    <TextInput
+      style={[styles.input, isFocused && styles.inputFocused, style]}
+      placeholderTextColor={colors.light}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
+      {...props}
+    />
+  );
 };
 
 const styles = StyleSheet.create({
@@ -13,6 +24,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     fontSize: 16,
     color: colors.primary,
-    fontStyle: "italic",
+  },
+  inputFocused: {
+    borderColor: colors.primary,
   },
 });

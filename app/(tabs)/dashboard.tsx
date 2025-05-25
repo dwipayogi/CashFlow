@@ -1,75 +1,163 @@
-import { View, ScrollView, Text, StyleSheet } from "react-native";
+import {
+  View,
+  ScrollView,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
+import { useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { colors } from "@/constants/colors";
 import { Card } from "@/components/card";
 
-const transactions = [
-  {
-    id: 1,
-    title: "Grocery Shopping",
-    date: "2024-03-20T14:30:00",
-    category: "Food",
-    expense: true,
-    amount: 1000000,
-  },
-  {
-    id: 2,
-    title: "Salary Deposit",
-    date: "2024-03-15T09:00:00",
-    category: "Income",
-    expense: false,
-    amount: 4250000,
-  },
-  {
-    id: 3,
-    title: "Netflix Subscription",
-    date: "2024-03-14T16:45:00",
-    category: "Entertainment",
-    expense: true,
-    amount: 1599000,
-  },
-  {
-    id: 4,
-    title: "Electric Bill",
-    date: "2024-03-12T11:20:00",
-    category: "Utilities",
-    expense: true,
-    amount: 853000,
-  },
-];
+// Define the transaction type
+interface Transaction {
+  id: string;
+  amount: number;
+  description: string;
+  type: "DEPOSIT" | "WITHDRAWAL";
+  category: string;
+  createdAt: string;
+  updatedAt: string;
+  categoryData?: {
+    id: string;
+    name: string;
+    description: string;
+    userId: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+}
+
+// Define user type
+interface User {
+  id: string;
+  username: string;
+  email: string;
+}
 
 export default function Dashboard() {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [totalBalance, setTotalBalance] = useState(0);
+  const [totalIncome, setTotalIncome] = useState(0);
+  const [totalExpense, setTotalExpense] = useState(0);
+  useEffect(() => {
+    // Fetch user data and transactions when component mounts
+    const fetchUserData = async () => {
+      try {
+        // Get stored user data
+        const userData = await AsyncStorage.getItem("userData");
+        if (userData) {
+          setUser(JSON.parse(userData));
+        }
+
+        // Get token for authenticated requests
+        const token = await AsyncStorage.getItem("userToken");
+
+        if (!token) {
+          throw new Error("No authentication token found");
+        }
+
+        // Fetch transactions
+        const response = await fetch("http://localhost:3000/api/transactions", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to fetch transactions");
+        }
+
+        // According to API.md, transactions are in data.data
+        setTransactions(data.data || []);
+
+        // Calculate totals
+        let income = 0;
+        let expense = 0;
+
+        (data.data || []).forEach((transaction: Transaction) => {
+          if (transaction.type === "DEPOSIT") {
+            income += transaction.amount;
+          } else {
+            expense += transaction.amount;
+          }
+        });
+
+        setTotalIncome(income);
+        setTotalExpense(expense);
+        setTotalBalance(income - expense);
+      } catch (err: any) {
+        console.error("Error fetching data:", err);
+        setError(err.message || "An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.container, styles.errorContainer]}>
+        <Text style={styles.errorText}>Error: {error}</Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <Text style={styles.title}>Hello,</Text>
-        <Text style={styles.name}>Dwipayogi</Text>
+        <Text style={styles.name}>{user?.username || "User"}</Text>
       </View>
       <View style={styles.content}>
         <Text style={styles.balance}>Total Balance</Text>
-        <Text style={styles.balanceAmount}>Rp100.000.000</Text>
+        <Text style={styles.balanceAmount}>
+          Rp{totalBalance.toLocaleString("id-ID")}
+        </Text>
         <View style={styles.income}>
           <View style={styles.incomeItem}>
             <Text style={styles.incomeTitle}>Income</Text>
-            <Text style={styles.incomeAmount}>Rp100.000.000</Text>
+            <Text style={styles.incomeAmount}>
+              Rp{totalIncome.toLocaleString("id-ID")}
+            </Text>
           </View>
+          <View style={styles.divider} />
           <View style={styles.incomeItem}>
             <Text style={styles.incomeTitle}>Expense</Text>
-            <Text style={styles.expenseAmount}>Rp100.000.000</Text>
+            <Text style={styles.expenseAmount}>
+              Rp{totalExpense.toLocaleString("id-ID")}
+            </Text>
           </View>
         </View>
-      </View>
+      </View>{" "}
       <View style={styles.transaction}>
         <Text style={styles.transactionTitle}>Recent Transactions</Text>
-        {transactions.map((transaction) => (
-          <Card
-            key={transaction.id}
-            title={transaction.title}
-            date={transaction.date}
-            amount={transaction.amount}
-            expense={transaction.expense}
-          />
-        ))}
+        {transactions.length === 0 ? (
+          <Text style={styles.noTransactions}>No transactions found</Text>
+        ) : (
+          transactions
+            .slice(0, 5)
+            .map((transaction) => (
+              <Card key={transaction.id} transaction={transaction} />
+            ))
+        )}
       </View>
     </ScrollView>
   );
@@ -86,11 +174,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    fontSize: 16,
+    fontSize: 18,
     color: colors.light,
   },
   name: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: "bold",
     color: colors.primary,
   },
@@ -120,16 +208,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   incomeTitle: {
-    fontSize: 14,
+    fontSize: 16,
     color: colors.black,
   },
   incomeAmount: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "bold",
     color: colors.success,
   },
+  divider: {
+    width: 1,
+    height: "100%",
+    backgroundColor: "#DFDFDF",
+  },
   expenseAmount: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "bold",
     color: colors.danger,
   },
@@ -138,8 +231,27 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   transactionTitle: {
-    fontSize: 16,
+    fontSize: 18,
     color: colors.light,
     fontWeight: "bold",
+  },
+  loadingContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorText: {
+    color: colors.danger,
+    fontSize: 16,
+    textAlign: "center",
+  },
+  noTransactions: {
+    color: colors.light,
+    textAlign: "center",
+    marginTop: 20,
+    fontSize: 16,
   },
 });

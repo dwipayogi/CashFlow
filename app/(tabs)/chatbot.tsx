@@ -31,22 +31,37 @@ export default function Chatbot() {
   // useEffect(() => {
   //   saveMessages(messages);
   // }, [messages]);
-
   async function sendMessage({ message }: { message: string }) {
     if (!message) return;
     setMessages((prevMessages) => [...prevMessages, { role: "user", message }]);
-    const response = await fetch("https://nutridetect-api.vercel.app/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ chat: message }),
-    });
-    const data = await response.json();
-    setMessages((prevMessages) => [
-      ...prevMessages,
-      { role: "bot", message: data.content },
-    ]);
+
+    try {
+      const response = await fetch("http://localhost:3000/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: message }), // Changed from { chat: message } to match backend
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status: ${response.status}`);
+      }
+      const data = await response.json();
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { role: "bot", message: data.content || "Tidak ada jawaban diterima." },
+      ]);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        {
+          role: "bot",
+          message: "Maaf, terjadi kesalahan. Silakan coba lagi nanti.",
+        },
+      ]);
+    }
   }
 
   return (

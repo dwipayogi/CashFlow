@@ -22,7 +22,7 @@ export const formatRupiah = (amount: number | string, withSymbol = true): string
     .join('') || '0';
   
   // Add Rp symbol if requested
-  return withSymbol ? `Rp ${formatted}` : formatted;
+  return withSymbol ? `Rp${formatted}` : formatted;
 };
 
 /**

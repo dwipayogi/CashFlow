@@ -6,14 +6,28 @@ import {
 } from "react-native";
 import { colors } from "@/constants/colors";
 
+// Extend TouchableOpacityProps to include textColor
+interface ButtonProps extends TouchableOpacityProps {
+  textColor?: string;
+  loading?: boolean;
+}
+
 export const Button = ({
   children,
   style,
+  textColor,
+  loading = false,
   ...props
-}: TouchableOpacityProps) => {
+}: ButtonProps) => {
   return (
-    <TouchableOpacity style={[styles.button, style]} {...props}>
-      <Text style={styles.text}>{children}</Text>
+    <TouchableOpacity
+      style={[styles.button, style]}
+      {...props}
+      disabled={loading || props.disabled}
+    >
+      <Text style={[styles.text, textColor ? { color: textColor } : null]}>
+        {loading ? "Loading..." : children}
+      </Text>
     </TouchableOpacity>
   );
 };

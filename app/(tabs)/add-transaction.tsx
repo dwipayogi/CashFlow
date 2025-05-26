@@ -1,11 +1,5 @@
 import { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, StyleSheet, Alert, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -90,22 +84,24 @@ export default function AddTransaction() {
 
   return (
     <View style={styles.container}>
-      <Header title="Add New Transaction" />
-      <Text style={styles.label}>Description</Text>
+      {" "}
+      <Header title="Tambah Transaksi Baru" />
+      <Text style={styles.label}>Deskripsi</Text>
       <Input
-        placeholder="Description"
+        placeholder="Deskripsi"
         value={description}
         onChangeText={setDescription}
       />
-      <Text style={styles.label}>Amount</Text>
+      <Text style={styles.label}>Jumlah</Text>
       <CurrencyInput
-        placeholder="Amount"
+        placeholder="Jumlah"
         value={amount}
         onChangeText={setAmount}
       />
-      <Text style={styles.label}>Type</Text>
+      <Text style={styles.label}>Tipe</Text>
       <View style={styles.typeButtonContainer}>
-        <Button textColor={type === "DEPOSIT" ? colors.dark : colors.primary}
+        <Button
+          textColor={type === "DEPOSIT" ? colors.dark : colors.primary}
           style={[
             styles.typeButton,
             styles.leftButton,
@@ -113,9 +109,10 @@ export default function AddTransaction() {
           ]}
           onPress={() => setType("DEPOSIT")}
         >
-          Deposit
+          Pendapatan
         </Button>
-        <Button textColor={type === "WITHDRAWAL" ? colors.dark : colors.primary}
+        <Button
+          textColor={type === "WITHDRAWAL" ? colors.dark : colors.primary}
           style={[
             styles.typeButton,
             styles.rightButton,
@@ -123,17 +120,17 @@ export default function AddTransaction() {
           ]}
           onPress={() => setType("WITHDRAWAL")}
         >
-          Withdrawal
+          Pengeluaran
         </Button>
-      </View>
-      <Text style={styles.label}>Category (Optional)</Text>
+      </View>{" "}
+      <Text style={styles.label}>Kategori (Opsional)</Text>
       <Input
-        placeholder="Category"
+        placeholder="Kategori"
         value={category}
         onChangeText={setCategory}
-      />
+      />{" "}
       <Button style={styles.button} onPress={handleAddTransaction}>
-        Add Transaction
+        Tambah Transaksi
       </Button>
     </View>
   );

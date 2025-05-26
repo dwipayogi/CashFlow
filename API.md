@@ -21,6 +21,7 @@ A RESTful API for managing personal finances, including transactions, budgets, a
   - [Get Transactions by Category ID](#get-transactions-by-category-id)
   - [Get Transactions by Category Name](#get-transactions-by-category-name)
   - [Get Transactions by Type](#get-transactions-by-type)
+  - [Get Transactions by Month](#get-transactions-by-month)
   - [Update Transaction](#update-transaction)
   - [Delete Transaction](#delete-transaction)
 - [Budgets](#budgets)
@@ -30,6 +31,9 @@ A RESTful API for managing personal finances, including transactions, budgets, a
   - [Get Budgets by Category](#get-budgets-by-category)
   - [Update Budget](#update-budget)
   - [Delete Budget](#delete-budget)
+- [Chatbot](#chatbot)
+  - [Send Message](#send-message)
+  - [Get Financial Insights](#get-financial-insights)
 
 ## Authentication
 
@@ -546,6 +550,61 @@ Get transactions filtered by type (DEPOSIT or WITHDRAWAL).
     }
     ```
 
+### Get Transactions by Month
+
+Get transactions for a specific month and year with summary statistics.
+
+- **URL**: `/api/transactions/month/:year/:month`
+- **Method**: `GET`
+- **Authentication**: Required
+- **Headers**:
+  ```
+  Authorization: Bearer jwt_token_here
+  ```
+- **Parameters**:
+  - `year`: Year (e.g., 2023)
+  - `month`: Month number (1-12, where 1 is January)
+- **Success Response**:
+  - **Code**: 200 OK
+  - **Content**:
+    ```json
+    {
+      "count": 5,
+      "month": 6,
+      "monthName": "June",
+      "year": 2023,
+      "period": "June 2023",
+      "summary": {
+        "totalDeposits": 1500,
+        "totalWithdrawals": 450,
+        "netChange": 1050,
+        "depositCount": 2,
+        "withdrawalCount": 3
+      },
+      "data": [
+        {
+          "id": "transaction_id_1",
+          "userId": "user_id",
+          "amount": 200,
+          "description": "Grocery shopping",
+          "type": "WITHDRAWAL",
+          "category": "category_id",
+          "createdAt": "2023-06-15T14:00:00.000Z",
+          "updatedAt": "2023-06-15T14:00:00.000Z",
+          "categoryData": {
+            "id": "category_id",
+            "name": "Groceries",
+            "description": "Food and household items",
+            "userId": "user_id",
+            "createdAt": "2023-06-15T11:00:00.000Z",
+            "updatedAt": "2023-06-15T11:00:00.000Z"
+          }
+        }
+        // More transactions for the specified month
+      ]
+    }
+    ```
+
 ### Update Transaction
 
 Update an existing transaction. If a new category is specified and doesn't exist, it will be created automatically.
@@ -873,6 +932,72 @@ Delete a budget.
     ```json
     {
       "message": "Budget deleted successfully"
+    }
+    ```
+
+## Chatbot
+
+### Send Message
+
+Send a message to the financial assistant chatbot and receive a response.
+
+- **URL**: `/api/chatbot/message`
+- **Method**: `POST`
+- **Authentication**: Optional
+- **Request Body**:
+  ```json
+  {
+    "message": "How can I save money for a vacation?"
+  }
+  ```
+- **Query Parameters**:
+  - `stream`: Set to `true` to receive a streaming response (server-sent events)
+- **Success Response (Regular)**:
+
+  - **Code**: 200 OK
+  - **Content**:
+    ```json
+    {
+      "message": "Bot response received",
+      "data": {
+        "question": "How can I save money for a vacation?",
+        "answer": "To save money for a vacation, consider creating a dedicated savings account and setting up automatic transfers after each paycheck. You can also cut down on non-essential expenses like dining out or subscription services, and redirect those funds to your vacation fund. Creating a specific budget category for your vacation and tracking your progress can help you stay motivated. Additionally, look for ways to earn extra income or use cashback apps to boost your savings."
+      }
+    }
+    ```
+
+- **Success Response (Streaming)**:
+  - **Code**: 200 OK
+  - **Content Type**: text/event-stream
+  - **Content** (sent as SSE events):
+    ```
+    data: {"content":"To save money for a vacation"}
+    data: {"content":", consider creating a dedicated"}
+    data: {"content":" savings account and..."}
+    ...
+    data: [DONE]
+    ```
+
+### Get Financial Insights
+
+Get personalized financial insights based on your transaction and budget data.
+
+- **URL**: `/api/chatbot/insights`
+- **Method**: `GET`
+- **Authentication**: Required
+- **Headers**:
+  ```
+  Authorization: Bearer jwt_token_here
+  ```
+- **Success Response**:
+  - **Code**: 200 OK
+  - **Content**:
+    ```json
+    {
+      "message": "Financial insights generated",
+      "data": {
+        "insights": "Based on your spending patterns, you could save approximately $120 monthly by reducing dining out expenses. Your grocery spending is well within budget, good job! Consider allocating more to your emergency fund, as it's currently below recommended levels. Your subscription services total $45/month, which could be optimized. For your income level, your housing costs are appropriate at 28% of monthly income."
+      }
     }
     ```
 

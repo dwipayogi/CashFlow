@@ -8,7 +8,7 @@ interface Transaction {
   amount: number;
   description: string;
   type: "DEPOSIT" | "WITHDRAWAL";
-  category?: string;
+  categoryName?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -31,8 +31,8 @@ export const Card = ({ transaction }: { transaction: Transaction }) => {
             <Text style={styles.date}>
               {transaction.createdAt.split("T")[0]}
             </Text>
-            {transaction.category && (
-              <Text style={styles.category}>{transaction.category}</Text>
+            {transaction.categoryName && (
+              <Text style={styles.category}>{transaction.categoryName}</Text>
             )}
           </View>
         </View>

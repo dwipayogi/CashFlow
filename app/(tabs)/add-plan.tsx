@@ -38,7 +38,6 @@ export default function AddPlan() {
       Alert.alert("Error", "Please enter a valid target amount");
       return;
     }
-
     try {
       setLoading(true);
 
@@ -49,20 +48,34 @@ export default function AddPlan() {
         throw new Error("No authentication token found");
       }
 
+      // Create the request body with proper typing
+      const requestBody: {
+        amount: number;
+        target: number;
+        description: string;
+        type: string;
+        category?: string;
+        endDate?: string;
+      } = {
+        amount: amountNum,
+        target: targetNum,
+        description,
+        type,
+        category: category || undefined,
+      };
+
+      // Only include endDate for SAVINGS type
+      if (type === "SAVINGS") {
+        requestBody.endDate = endDate.toISOString();
+      }
+
       const response = await fetch("http://localhost:3000/api/budgets", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          amount: amountNum,
-          target: targetNum,
-          description,
-          type,
-          category: category || undefined,
-          endDate: endDate.toISOString(),
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
@@ -91,26 +104,27 @@ export default function AddPlan() {
 
   return (
     <View style={styles.container}>
-      <Header title="Create New Budget Plan" />
-      <Text style={styles.label}>Description</Text>
+      {" "}
+      <Header title="Buat Rencana Anggaran Baru" />
+      <Text style={styles.label}>Deskripsi</Text>
       <Input
-        placeholder="Description"
+        placeholder="Deskripsi"
         value={description}
         onChangeText={setDescription}
       />
-      <Text style={styles.label}>Current Amount</Text>
+      <Text style={styles.label}>Jumlah Saat Ini</Text>
       <CurrencyInput
-        placeholder="Current Amount"
+        placeholder="Jumlah Saat Ini"
         value={amount}
         onChangeText={setAmount}
       />
-      <Text style={styles.label}>Target Amount</Text>
+      <Text style={styles.label}>Jumlah Target</Text>
       <CurrencyInput
         placeholder="Target Amount"
         value={target}
         onChangeText={setTarget}
       />{" "}
-      <Text style={styles.label}>Type</Text>
+      <Text style={styles.label}>Tipe</Text>
       <View style={styles.typeButtonContainer}>
         {" "}
         <Button
@@ -122,7 +136,7 @@ export default function AddPlan() {
           onPress={() => setType("SAVINGS")}
           textColor={type === "SAVINGS" ? colors.dark : colors.primary}
         >
-          Savings Goal
+          Target Menabung
         </Button>
         <Button
           style={[
@@ -133,67 +147,73 @@ export default function AddPlan() {
           onPress={() => setType("EXPENSE")}
           textColor={type === "EXPENSE" ? colors.dark : colors.primary}
         >
-          Budget Limit
+          Batas Anggaran
         </Button>
-      </View>
-      <Text style={styles.label}>Category (Optional)</Text>
+      </View>{" "}
+      <Text style={styles.label}>Kategori (Opsional)</Text>
       <Input
         placeholder="Category"
         value={category}
         onChangeText={setCategory}
       />
-      <Text style={styles.label}>End Date (DD/MM/YYYY)</Text>
-      <View style={styles.manualDateContainer}>
-        <Input
-          style={styles.dateInput}
-          placeholder="DD"
-          keyboardType="numeric"
-          value={endDate.getDate().toString().padStart(2, "0")}
-          onChangeText={(text) => {
-            const day = parseInt(text);
-            if (!isNaN(day) && day >= 1 && day <= 31) {
-              const newDate = new Date(endDate);
-              newDate.setDate(day);
-              setEndDate(newDate);
-            }
-          }}
-          maxLength={2}
-        />
-        <Text style={styles.dateSlash}>/</Text>
-        <Input
-          style={styles.dateInput}
-          placeholder="MM"
-          keyboardType="numeric"
-          value={(endDate.getMonth() + 1).toString().padStart(2, "0")}
-          onChangeText={(text) => {
-            const month = parseInt(text) - 1;
-            if (!isNaN(month) && month >= 0 && month <= 11) {
-              const newDate = new Date(endDate);
-              newDate.setMonth(month);
-              setEndDate(newDate);
-            }
-          }}
-          maxLength={2}
-        />
-        <Text style={styles.dateSlash}>/</Text>
-        <Input
-          style={[styles.dateInput, styles.yearInput]}
-          placeholder="YYYY"
-          keyboardType="numeric"
-          value={endDate.getFullYear().toString()}
-          onChangeText={(text) => {
-            const year = parseInt(text);
-            if (!isNaN(year) && text.length === 4) {
-              const newDate = new Date(endDate);
-              newDate.setFullYear(year);
-              setEndDate(newDate);
-            }
-          }}
-          maxLength={4}
-        />
-      </View>
+      {/* Only show End Date input for Savings Goal type */}
+      {type === "SAVINGS" && (
+        <>
+          {" "}
+          <Text style={styles.label}>Tanggal Berakhir (DD/MM/YYYY)</Text>
+          <View style={styles.manualDateContainer}>
+            <Input
+              style={styles.dateInput}
+              placeholder="DD"
+              keyboardType="numeric"
+              value={endDate.getDate().toString().padStart(2, "0")}
+              onChangeText={(text) => {
+                const day = parseInt(text);
+                if (!isNaN(day) && day >= 1 && day <= 31) {
+                  const newDate = new Date(endDate);
+                  newDate.setDate(day);
+                  setEndDate(newDate);
+                }
+              }}
+              maxLength={2}
+            />
+            <Text style={styles.dateSlash}>/</Text>
+            <Input
+              style={styles.dateInput}
+              placeholder="MM"
+              keyboardType="numeric"
+              value={(endDate.getMonth() + 1).toString().padStart(2, "0")}
+              onChangeText={(text) => {
+                const month = parseInt(text) - 1;
+                if (!isNaN(month) && month >= 0 && month <= 11) {
+                  const newDate = new Date(endDate);
+                  newDate.setMonth(month);
+                  setEndDate(newDate);
+                }
+              }}
+              maxLength={2}
+            />
+            <Text style={styles.dateSlash}>/</Text>
+            <Input
+              style={[styles.dateInput, styles.yearInput]}
+              placeholder="YYYY"
+              keyboardType="numeric"
+              value={endDate.getFullYear().toString()}
+              onChangeText={(text) => {
+                const year = parseInt(text);
+                if (!isNaN(year) && text.length === 4) {
+                  const newDate = new Date(endDate);
+                  newDate.setFullYear(year);
+                  setEndDate(newDate);
+                }
+              }}
+              maxLength={4}
+            />
+          </View>
+        </>
+      )}{" "}
       <Button style={styles.button} onPress={handleAddPlan}>
-        Create Budget Plan
+        Buat Rencana Anggaran
       </Button>
     </View>
   );

@@ -183,7 +183,7 @@ export default function Transaction() {
 
   return (
     <View style={styles.container}>
-      <Header title="Statistics" />
+      <Header title="Statistik" />
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.chart}>
           <BarChart
@@ -219,11 +219,11 @@ export default function Transaction() {
           />
         </View>
         <View style={styles.transaction}>
-          <Text style={styles.transactionTitle}>Transaction</Text>
+          <Text style={styles.transactionTitle}>Transaksi</Text>
 
           {todayTransactions.length > 0 && (
             <>
-              <Text style={styles.transactionSubtitle}>Today</Text>{" "}
+              <Text style={styles.transactionSubtitle}>Hari Ini</Text>{" "}
               {todayTransactions.map((transaction) => (
                 <Card key={transaction.id} transaction={transaction} />
               ))}
@@ -232,7 +232,7 @@ export default function Transaction() {
 
           {yesterdayTransactions.length > 0 && (
             <>
-              <Text style={styles.transactionSubtitle}>Yesterday</Text>
+              <Text style={styles.transactionSubtitle}>Kemarin</Text>
               {yesterdayTransactions.map((transaction) => (
                 <Card key={transaction.id} transaction={transaction} />
               ))}
@@ -241,7 +241,7 @@ export default function Transaction() {
 
           {olderTransactions.length > 0 && (
             <>
-              <Text style={styles.transactionSubtitle}>Earlier</Text>
+              <Text style={styles.transactionSubtitle}>Sebelumnya</Text>
               {olderTransactions.map((transaction) => (
                 <Card key={transaction.id} transaction={transaction} />
               ))}
@@ -249,12 +249,14 @@ export default function Transaction() {
           )}
 
           {transactions.length === 0 && (
-            <Text style={styles.noTransactions}>No transactions found</Text>
+            <Text style={styles.noTransactions}>
+              Tidak ada transaksi ditemukan
+            </Text>
           )}
         </View>
       </ScrollView>
       <Link href="/add-transaction" asChild>
-        <Text style={styles.addTransactionButton}>Add Transaction</Text>
+        <Text style={styles.addTransactionButton}>Tambah Transaksi</Text>
       </Link>
     </View>
   );

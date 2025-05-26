@@ -115,7 +115,7 @@ export default function Dashboard() {
   if (error) {
     return (
       <View style={[styles.container, styles.errorContainer]}>
-        <Text style={styles.errorText}>Error: {error}</Text>
+        <Text style={styles.errorText}>Kesalahan: {error}</Text>
       </View>
     );
   }
@@ -123,24 +123,26 @@ export default function Dashboard() {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
-        <Text style={styles.title}>Hello,</Text>
-        <Text style={styles.name}>{user?.username || "User"}</Text>
+        {" "}
+        <Text style={styles.title}>Halo,</Text>
+        <Text style={styles.name}>{user?.username || "Pengguna"}</Text>
       </View>
       <View style={styles.content}>
-        <Text style={styles.balance}>Total Balance</Text>
+        {" "}
+        <Text style={styles.balance}>Total Saldo</Text>
         <Text style={styles.balanceAmount}>
           Rp{totalBalance.toLocaleString("id-ID")}
         </Text>
         <View style={styles.income}>
           <View style={styles.incomeItem}>
-            <Text style={styles.incomeTitle}>Income</Text>
+            <Text style={styles.incomeTitle}>Pemasukan</Text>
             <Text style={styles.incomeAmount}>
               Rp{totalIncome.toLocaleString("id-ID")}
             </Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.incomeItem}>
-            <Text style={styles.incomeTitle}>Expense</Text>
+            <Text style={styles.incomeTitle}>Pengeluaran</Text>
             <Text style={styles.expenseAmount}>
               Rp{totalExpense.toLocaleString("id-ID")}
             </Text>
@@ -148,9 +150,12 @@ export default function Dashboard() {
         </View>
       </View>{" "}
       <View style={styles.transaction}>
-        <Text style={styles.transactionTitle}>Recent Transactions</Text>
+        {" "}
+        <Text style={styles.transactionTitle}>Transaksi Terbaru</Text>
         {transactions.length === 0 ? (
-          <Text style={styles.noTransactions}>No transactions found</Text>
+          <Text style={styles.noTransactions}>
+            Tidak ada transaksi ditemukan
+          </Text>
         ) : (
           transactions
             .slice(0, 5)

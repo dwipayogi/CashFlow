@@ -23,6 +23,7 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-native": "0.76.6",
+    "react-native-drawer-layout": "^4.1.8",
     "react-native-gifted-charts": "^1.4.55",
     "react-native-markdown-display": "^7.0.2",
     "react-native-safe-area-context": "4.12.0",

@@ -11,6 +11,7 @@ import { Link } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { Header } from "@/components/header";
+import { EditBudgetModal } from "@/components/edit-budget-modal";
 import { colors } from "@/constants/colors";
 
 // Define the budget type
@@ -35,7 +36,15 @@ interface Budget {
 }
 
 // Custom BudgetCard component with progress bar
-const BudgetCard = ({ budget }: { budget: Budget }) => {
+const BudgetCard = ({
+  budget,
+  onEdit,
+  onDelete,
+}: {
+  budget: Budget;
+  onEdit: (budget: Budget) => void;
+  onDelete: (id: string) => void;
+}) => {
   const [expanded, setExpanded] = useState(false);
   const progress = budget.amount / budget.target;
   const progressPercentage = Math.min(Math.round(progress * 100), 100);
@@ -57,19 +66,18 @@ const BudgetCard = ({ budget }: { budget: Budget }) => {
           Rp {budget.target.toLocaleString("id-ID")}
         </Text>
       </View>
-
       <View style={styles.budgetMeta}>
         <Text style={styles.budgetCategory}>
-          {budget.categoryData?.name || "No category"}
+          {" "}
+          {budget.categoryData?.name || "Tanpa kategori"}
         </Text>
         <Text style={styles.budgetDate}>
-          Until:{" "}
+          Hingga:{" "}
           {budget.endDate
             ? new Date(budget.endDate).toLocaleDateString()
-            : "No end date"}
+            : "Tanpa tanggal akhir"}
         </Text>
       </View>
-
       <View style={styles.progressContainer}>
         <View style={styles.progressBackground}>
           {" "}
@@ -88,31 +96,31 @@ const BudgetCard = ({ budget }: { budget: Budget }) => {
           {progressPercentage}% ({budget.amount.toLocaleString("id-ID")} /{" "}
           {budget.target.toLocaleString("id-ID")})
         </Text>
-      </View>
-
+      </View>{" "}
       {expanded && (
         <View style={styles.expandedContent}>
-          <Text style={styles.expandedLabel}>Progress Details</Text>
+          <Text style={styles.expandedLabel}>Detail Progres</Text>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Current Amount:</Text>
+            {" "}
+            <Text style={styles.detailLabel}>Jumlah Saat Ini:</Text>
             <Text style={styles.detailValue}>
               Rp {budget.amount.toLocaleString("id-ID")}
             </Text>
           </View>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Target Amount:</Text>
+            <Text style={styles.detailLabel}>Target Jumlah:</Text>
             <Text style={styles.detailValue}>
               Rp {budget.target.toLocaleString("id-ID")}
             </Text>
           </View>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Remaining:</Text>
+            <Text style={styles.detailLabel}>Sisa:</Text>
             <Text style={styles.detailValue}>
               Rp {(budget.target - budget.amount).toLocaleString("id-ID")}
             </Text>
-          </View>{" "}
+          </View>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Type:</Text>
+            <Text style={styles.detailLabel}>Tipe:</Text>
             <Text
               style={[
                 styles.detailValue,
@@ -124,6 +132,38 @@ const BudgetCard = ({ budget }: { budget: Budget }) => {
               {budget.type === "EXPENSE" ? "Budget Limit" : "Savings Goal"}
             </Text>
           </View>
+          {budget.endDate && (
+            <View style={styles.detailRow}>
+              {" "}
+              <Text style={styles.detailLabel}>Tanggal Berakhir:</Text>
+              <Text style={styles.detailValue}>
+                {new Date(budget.endDate).toLocaleDateString()}
+              </Text>
+            </View>
+          )}
+          <View style={styles.detailRow}>
+            {" "}
+            <Text style={styles.detailLabel}>Dibuat:</Text>
+            <Text style={styles.detailValue}>
+              {new Date(budget.createdAt).toLocaleDateString()}
+            </Text>
+          </View>
+
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.editButton]}
+              onPress={() => onEdit(budget)}
+            >
+              {" "}
+              <Text style={styles.buttonText}>Ubah</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.deleteButton]}
+              onPress={() => onDelete(budget.id)}
+            >
+              <Text style={styles.buttonText}>Hapus</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
     </TouchableOpacity>
@@ -134,6 +174,60 @@ export default function Planning() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
+
+  // Function to handle budget editing
+  const handleEditBudget = (budget: Budget) => {
+    setSelectedBudget(budget);
+    setEditModalVisible(true);
+  };
+
+  // Function to handle budget update after edit
+  const handleBudgetUpdate = (updatedBudget: Budget) => {
+    // Update the budget in the state
+    setBudgets(
+      budgets.map((b) => (b.id === updatedBudget.id ? updatedBudget : b))
+    );
+  };
+  // Function to delete a budget - directly perform the action without alerts
+  const handleDeleteBudget = async (budgetId: string) => {
+    try {
+      setLoading(true);
+      const token = await AsyncStorage.getItem("userToken");
+
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      const response = await fetch(
+        `http://localhost:3000/api/budgets/${budgetId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Failed to delete budget");
+      }
+
+      // Remove the budget from state
+      setBudgets(budgets.filter((b) => b.id !== budgetId));
+
+      // Success is indicated by the item being removed from the list
+    } catch (err: any) {
+      console.error("Error deleting budget:", err);
+      // Instead of alert, we could set an error state and display it in the UI
+      setError(err.message || "Failed to delete budget");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     // Fetch budget data when component mounts
     const fetchBudgets = async () => {
@@ -179,27 +273,39 @@ export default function Planning() {
       </View>
     );
   }
-
   return (
     <>
+      {" "}
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <Header title="Budgeting" />
+        <Header title="Anggaran" />
         <View style={styles.content}>
           {error ? (
             <Text style={styles.errorText}>{error}</Text>
           ) : budgets.length === 0 ? (
             <Text style={styles.noDataText}>
-              No budgets found. Create a new budget plan.
+              Belum ada anggaran. Silakan buat rencana anggaran baru.
             </Text>
           ) : (
             budgets.map((budget) => (
-              <BudgetCard key={budget.id} budget={budget} />
+              <BudgetCard
+                key={budget.id}
+                budget={budget}
+                onEdit={handleEditBudget}
+                onDelete={handleDeleteBudget}
+              />
             ))
           )}
         </View>
       </ScrollView>
+      {/* Edit Budget Modal */}
+      <EditBudgetModal
+        isVisible={editModalVisible}
+        onClose={() => setEditModalVisible(false)}
+        budget={selectedBudget}
+        onUpdate={handleBudgetUpdate}
+      />{" "}
       <Link href="/add-plan" asChild>
-        <Text style={styles.addPlanButton}>Add Plan</Text>
+        <Text style={styles.addPlanButton}>Tambah Anggaran</Text>
       </Link>
     </>
   );
@@ -225,6 +331,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
     color: colors.dark,
     fontSize: 16,
+    fontWeight: "bold",
+  },
+  actionButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 16,
+  },
+  actionButton: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 8,
+    alignItems: "center",
+    marginHorizontal: 4,
+  },
+  editButton: {
+    backgroundColor: colors.primary,
+  },
+  deleteButton: {
+    backgroundColor: colors.danger,
+  },
+  buttonText: {
+    color: colors.light,
     fontWeight: "bold",
   },
   loadingContainer: {

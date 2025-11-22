@@ -9,6 +9,7 @@ import { Input } from "@/components/input";
 import { CurrencyInput } from "@/components/currency-input";
 
 import { colors } from "@/constants/colors";
+import { addTransaction } from "@/functions/localStorage";
 
 export default function AddTransaction() {
   const router = useRouter();
@@ -41,29 +42,18 @@ export default function AddTransaction() {
         throw new Error("No authentication token found");
       }
 
-      // API expects category as a string (for category name)
-      const response = await fetch("http://localhost:3000/api/transactions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          description,
-          amount: amountNum,
-          type,
-          category: category || undefined,
-        }),
+      const result = await addTransaction(token, {
+        description,
+        amount: amountNum,
+        type: type as "DEPOSIT" | "WITHDRAWAL",
+        category: category || undefined,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to add transaction");
+      if (!result.success) {
+        throw new Error(result.message || "Failed to add transaction");
       }
 
-      // According to API.md, response contains message and data
-      console.log("Transaction created:", data.message);
+      console.log("Transaction created");
 
       router.push("/dashboard");
     } catch (err: any) {
@@ -84,7 +74,6 @@ export default function AddTransaction() {
 
   return (
     <View style={styles.container}>
-      {" "}
       <Header title="Tambah Transaksi Baru" />
       <Text style={styles.label}>Deskripsi</Text>
       <Input
@@ -122,13 +111,13 @@ export default function AddTransaction() {
         >
           Pengeluaran
         </Button>
-      </View>{" "}
+      </View>
       <Text style={styles.label}>Kategori (Opsional)</Text>
       <Input
         placeholder="Kategori"
         value={category}
         onChangeText={setCategory}
-      />{" "}
+      />
       <Button style={styles.button} onPress={handleAddTransaction}>
         Tambah Transaksi
       </Button>

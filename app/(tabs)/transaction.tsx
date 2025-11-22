@@ -15,6 +15,7 @@ import { Card } from "@/components/card";
 
 import { colors } from "@/constants/colors";
 import { formatRupiah } from "@/functions/formatCurrency";
+import { getTransactions } from "@/functions/localStorage";
 
 // Define the transaction type
 interface Transaction {
@@ -48,21 +49,11 @@ export default function Transaction() {
           throw new Error("No authentication token found");
         }
 
-        const response = await fetch("http://localhost:3000/api/transactions", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        // Get transactions from local storage
+        const transactions = await getTransactions(token);
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || "Failed to fetch transactions");
-        }
-
-        // According to API.md, transactions are in data.data
         // Sort transactions by date (newest first)
-        const sortedTransactions = (data.data || []).sort(
+        const sortedTransactions = transactions.sort(
           (a: Transaction, b: Transaction) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
@@ -223,7 +214,7 @@ export default function Transaction() {
 
           {todayTransactions.length > 0 && (
             <>
-              <Text style={styles.transactionSubtitle}>Hari Ini</Text>{" "}
+              <Text style={styles.transactionSubtitle}>Hari Ini</Text>
               {todayTransactions.map((transaction) => (
                 <Card key={transaction.id} transaction={transaction} />
               ))}

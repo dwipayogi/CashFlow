@@ -15,6 +15,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Input } from "@/components/input";
 import { Button } from "@/components/button";
 import { colors } from "@/constants/colors";
+import { registerUser } from "@/functions/localStorage";
 
 export default function Register() {
   const router = useRouter();
@@ -34,29 +35,17 @@ export default function Register() {
       setLoading(true);
       setError("");
 
-      const response = await fetch("http://localhost:3000/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username,
-          email,
-          password,
-        }),
-      });
+      const result = await registerUser(username, email, password);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Registration failed");
+      if (!result.success) {
+        throw new Error(result.message || "Registration failed");
       }
 
       // Store token securely
-      await AsyncStorage.setItem("userToken", data.token);
+      await AsyncStorage.setItem("userToken", result.token!);
 
       // Store user info
-      await AsyncStorage.setItem("userData", JSON.stringify(data.user));
+      await AsyncStorage.setItem("userData", JSON.stringify(result.user));
 
       // Navigate to dashboard
       router.push("/dashboard");
@@ -90,7 +79,11 @@ export default function Register() {
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <Text style={styles.subtitle}>Username</Text>
-        <Input placeholder="Username" value={username} onChangeText={setUsername} />
+        <Input
+          placeholder="Username"
+          value={username}
+          onChangeText={setUsername}
+        />
         <Text style={styles.subtitle}>Email</Text>
         <Input placeholder="Email" value={email} onChangeText={setEmail} />
         <Text style={styles.subtitle}>Password</Text>

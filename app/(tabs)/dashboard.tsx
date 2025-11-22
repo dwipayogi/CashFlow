@@ -10,6 +10,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { colors } from "@/constants/colors";
 import { Card } from "@/components/card";
+import { getTransactions } from "@/functions/localStorage";
 
 // Define the transaction type
 interface Transaction {
@@ -62,27 +63,15 @@ export default function Dashboard() {
           throw new Error("No authentication token found");
         }
 
-        // Fetch transactions
-        const response = await fetch("http://localhost:3000/api/transactions", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || "Failed to fetch transactions");
-        }
-
-        // According to API.md, transactions are in data.data
-        setTransactions(data.data || []);
+        // Fetch transactions from local storage
+        const transactions = await getTransactions(token);
+        setTransactions(transactions);
 
         // Calculate totals
         let income = 0;
         let expense = 0;
 
-        (data.data || []).forEach((transaction: Transaction) => {
+        transactions.forEach((transaction: Transaction) => {
           if (transaction.type === "DEPOSIT") {
             income += transaction.amount;
           } else {
@@ -123,12 +112,10 @@ export default function Dashboard() {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
-        {" "}
         <Text style={styles.title}>Halo,</Text>
         <Text style={styles.name}>{user?.username || "Pengguna"}</Text>
       </View>
       <View style={styles.content}>
-        {" "}
         <Text style={styles.balance}>Total Saldo</Text>
         <Text style={styles.balanceAmount}>
           Rp{totalBalance.toLocaleString("id-ID")}
@@ -148,9 +135,8 @@ export default function Dashboard() {
             </Text>
           </View>
         </View>
-      </View>{" "}
+      </View>
       <View style={styles.transaction}>
-        {" "}
         <Text style={styles.transactionTitle}>Transaksi Terbaru</Text>
         {transactions.length === 0 ? (
           <Text style={styles.noTransactions}>

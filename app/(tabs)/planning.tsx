@@ -13,6 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Header } from "@/components/header";
 import { EditBudgetModal } from "@/components/edit-budget-modal";
 import { colors } from "@/constants/colors";
+import { getBudgets, deleteBudget } from "@/functions/localStorage";
 
 // Define the budget type
 interface Budget {
@@ -68,7 +69,6 @@ const BudgetCard = ({
       </View>
       <View style={styles.budgetMeta}>
         <Text style={styles.budgetCategory}>
-          {" "}
           {budget.categoryData?.name || "Tanpa kategori"}
         </Text>
         <Text style={styles.budgetDate}>
@@ -80,7 +80,6 @@ const BudgetCard = ({
       </View>
       <View style={styles.progressContainer}>
         <View style={styles.progressBackground}>
-          {" "}
           <View
             style={[
               styles.progressFill,
@@ -96,12 +95,11 @@ const BudgetCard = ({
           {progressPercentage}% ({budget.amount.toLocaleString("id-ID")} /{" "}
           {budget.target.toLocaleString("id-ID")})
         </Text>
-      </View>{" "}
+      </View>
       {expanded && (
         <View style={styles.expandedContent}>
           <Text style={styles.expandedLabel}>Detail Progres</Text>
           <View style={styles.detailRow}>
-            {" "}
             <Text style={styles.detailLabel}>Jumlah Saat Ini:</Text>
             <Text style={styles.detailValue}>
               Rp {budget.amount.toLocaleString("id-ID")}
@@ -134,7 +132,6 @@ const BudgetCard = ({
           </View>
           {budget.endDate && (
             <View style={styles.detailRow}>
-              {" "}
               <Text style={styles.detailLabel}>Tanggal Berakhir:</Text>
               <Text style={styles.detailValue}>
                 {new Date(budget.endDate).toLocaleDateString()}
@@ -142,7 +139,6 @@ const BudgetCard = ({
             </View>
           )}
           <View style={styles.detailRow}>
-            {" "}
             <Text style={styles.detailLabel}>Dibuat:</Text>
             <Text style={styles.detailValue}>
               {new Date(budget.createdAt).toLocaleDateString()}
@@ -154,7 +150,6 @@ const BudgetCard = ({
               style={[styles.actionButton, styles.editButton]}
               onPress={() => onEdit(budget)}
             >
-              {" "}
               <Text style={styles.buttonText}>Ubah</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -200,19 +195,10 @@ export default function Planning() {
         throw new Error("No authentication token found");
       }
 
-      const response = await fetch(
-        `http://localhost:3000/api/budgets/${budgetId}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const result = await deleteBudget(token, budgetId);
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Failed to delete budget");
+      if (!result.success) {
+        throw new Error(result.message || "Failed to delete budget");
       }
 
       // Remove the budget from state
@@ -240,21 +226,9 @@ export default function Planning() {
           throw new Error("No authentication token found");
         }
 
-        // Fetch budgets
-        const response = await fetch("http://localhost:3000/api/budgets", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || "Failed to fetch budgets");
-        }
-
-        // According to API.md, budgets are in data.data
-        setBudgets(data.data || []);
+        // Fetch budgets from local storage
+        const budgets = await getBudgets(token);
+        setBudgets(budgets);
       } catch (err: any) {
         console.error("Error fetching budgets:", err);
         setError(err.message || "An error occurred while fetching budgets");
@@ -275,7 +249,6 @@ export default function Planning() {
   }
   return (
     <>
-      {" "}
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <Header title="Anggaran" />
         <View style={styles.content}>
@@ -303,7 +276,7 @@ export default function Planning() {
         onClose={() => setEditModalVisible(false)}
         budget={selectedBudget}
         onUpdate={handleBudgetUpdate}
-      />{" "}
+      />
       <Link href="/add-plan" asChild>
         <Text style={styles.addPlanButton}>Tambah Anggaran</Text>
       </Link>

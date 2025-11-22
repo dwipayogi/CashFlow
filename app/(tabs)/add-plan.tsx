@@ -8,6 +8,7 @@ import { Input } from "@/components/input";
 import { CurrencyInput } from "@/components/currency-input";
 
 import { colors } from "@/constants/colors";
+import { addBudget } from "@/functions/localStorage";
 
 export default function AddPlan() {
   const router = useRouter();
@@ -49,39 +50,30 @@ export default function AddPlan() {
       }
 
       // Create the request body with proper typing
-      const requestBody: {
+      const budgetData: {
         amount: number;
         target: number;
         description: string;
-        type: string;
+        type: "EXPENSE" | "SAVINGS";
         category?: string;
         endDate?: string;
       } = {
         amount: amountNum,
         target: targetNum,
         description,
-        type,
+        type: type as "EXPENSE" | "SAVINGS",
         category: category || undefined,
       };
 
       // Only include endDate for SAVINGS type
       if (type === "SAVINGS") {
-        requestBody.endDate = endDate.toISOString();
+        budgetData.endDate = endDate.toISOString();
       }
 
-      const response = await fetch("http://localhost:3000/api/budgets", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(requestBody),
-      });
+      const result = await addBudget(token, budgetData);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to create budget");
+      if (!result.success) {
+        throw new Error(result.message || "Failed to create budget");
       }
 
       Alert.alert("Success", "Budget plan created successfully");
@@ -104,7 +96,6 @@ export default function AddPlan() {
 
   return (
     <View style={styles.container}>
-      {" "}
       <Header title="Buat Rencana Anggaran Baru" />
       <Text style={styles.label}>Deskripsi</Text>
       <Input
@@ -123,10 +114,9 @@ export default function AddPlan() {
         placeholder="Target Amount"
         value={target}
         onChangeText={setTarget}
-      />{" "}
+      />
       <Text style={styles.label}>Tipe</Text>
       <View style={styles.typeButtonContainer}>
-        {" "}
         <Button
           style={[
             styles.typeButton,
@@ -149,7 +139,7 @@ export default function AddPlan() {
         >
           Batas Anggaran
         </Button>
-      </View>{" "}
+      </View>
       <Text style={styles.label}>Kategori (Opsional)</Text>
       <Input
         placeholder="Category"
@@ -159,7 +149,6 @@ export default function AddPlan() {
       {/* Only show End Date input for Savings Goal type */}
       {type === "SAVINGS" && (
         <>
-          {" "}
           <Text style={styles.label}>Tanggal Berakhir (DD/MM/YYYY)</Text>
           <View style={styles.manualDateContainer}>
             <Input
@@ -211,7 +200,7 @@ export default function AddPlan() {
             />
           </View>
         </>
-      )}{" "}
+      )}
       <Button style={styles.button} onPress={handleAddPlan}>
         Buat Rencana Anggaran
       </Button>

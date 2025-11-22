@@ -15,6 +15,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Input } from "@/components/input";
 import { Button } from "@/components/button";
 import { colors } from "@/constants/colors";
+import { loginUser } from "@/functions/localStorage";
 
 export default function Login() {
   const router = useRouter();
@@ -33,26 +34,17 @@ export default function Login() {
       setLoading(true);
       setError("");
 
-      const response = await fetch("http://localhost:3000/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
+      const result = await loginUser(email, password);
 
-      const data = await response.json();
+      if (!result.success) {
+        throw new Error(result.message || "Login failed");
+      }
 
-      if (!response.ok) {
-        throw new Error(data.message || "Login failed");
-      } // Store token securely
-      await AsyncStorage.setItem("userToken", data.token);
+      // Store token securely
+      await AsyncStorage.setItem("userToken", result.token!);
 
       // Store user info
-      await AsyncStorage.setItem("userData", JSON.stringify(data.user));
+      await AsyncStorage.setItem("userData", JSON.stringify(result.user));
 
       router.push("/dashboard");
     } catch (err: any) {

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { View, StyleSheet, ScrollView } from "react-native";
 import Markdown from "react-native-markdown-display";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { Header } from "@/components/header";
 import { Input } from "@/components/input";
@@ -13,9 +12,43 @@ export default function Chatbot() {
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState({ role: "user", message: "" });
   const [loading, setLoading] = useState(false);
-  const [loadingInsights, setLoadingInsights] = useState(false);
-  // No message history persistence - messages will be lost on refresh
-  // Send message to chatbot API with streaming support
+
+  // Simple local chatbot responses
+  const getLocalResponse = (message: string): string => {
+    const lowerMessage = message.toLowerCase();
+
+    if (lowerMessage.includes("halo") || lowerMessage.includes("hai")) {
+      return "Halo! Saya asisten keuangan Anda. Saya dapat membantu Anda dengan pertanyaan tentang pengelolaan keuangan, penganggaran, dan tips menabung.";
+    }
+
+    if (lowerMessage.includes("budget") || lowerMessage.includes("anggaran")) {
+      return "Tips untuk membuat anggaran:\n\n1. **Catat semua pendapatan** - Ketahui berapa banyak uang yang masuk setiap bulan\n2. **Identifikasi pengeluaran tetap** - Seperti sewa, listrik, dan kebutuhan pokok\n3. **Alokasikan untuk tabungan** - Usahakan minimal 20% dari pendapatan\n4. **Sisihkan untuk dana darurat** - Idealnya 3-6 bulan pengeluaran\n5. **Pantau dan evaluasi** - Tinjau anggaran Anda secara berkala";
+    }
+
+    if (lowerMessage.includes("nabung") || lowerMessage.includes("saving")) {
+      return "Strategi menabung yang efektif:\n\n1. **Metode 50/30/20** - 50% kebutuhan, 30% keinginan, 20% tabungan\n2. **Otomatisasi** - Set auto-transfer ke rekening tabungan\n3. **Kurangi pengeluaran kecil** - Kopi harian bisa jadi tabungan besar\n4. **Tetapkan tujuan** - Punya target konkret membuat lebih termotivasi\n5. **Cari penghasilan tambahan** - Freelance atau side hustle";
+    }
+
+    if (lowerMessage.includes("utang") || lowerMessage.includes("debt")) {
+      return "Tips mengelola utang:\n\n1. **List semua utang** - Ketahui total dan bunga masing-masing\n2. **Prioritaskan bunga tinggi** - Lunasi yang bunganya paling besar dulu\n3. **Buat rencana pembayaran** - Konsisten bayar lebih dari minimum\n4. **Hindari utang baru** - Fokus melunasi yang ada\n5. **Pertimbangkan konsolidasi** - Jika punya banyak utang kecil";
+    }
+
+    if (lowerMessage.includes("investasi") || lowerMessage.includes("invest")) {
+      return "Dasar-dasar investasi:\n\n1. **Pahami profil risiko** - Konservatif, moderat, atau agresif\n2. **Diversifikasi** - Jangan taruh semua telur di satu keranjang\n3. **Mulai dari sekarang** - Waktu adalah teman terbaik investor\n4. **Investasi reguler** - Konsisten lebih baik dari timing pasar\n5. **Pelajari terus** - Edukasi finansial adalah investasi terbaik";
+    }
+
+    if (
+      lowerMessage.includes("terima kasih") ||
+      lowerMessage.includes("thanks")
+    ) {
+      return "Sama-sama! Senang bisa membantu. Jangan ragu untuk bertanya lagi jika ada yang ingin Anda ketahui tentang keuangan.";
+    }
+
+    // Default response
+    return "Terima kasih atas pertanyaan Anda. Sebagai asisten keuangan, saya dapat membantu dengan:\n\n- Tips membuat anggaran\n- Strategi menabung\n- Cara mengelola utang\n- Dasar-dasar investasi\n- Pengelolaan keuangan pribadi\n\nSilakan tanyakan topik spesifik yang ingin Anda ketahui!";
+  };
+
+  // Send message to local chatbot
   async function sendMessage({ message }: { message: string }) {
     if (!message) return;
     setLoading(true);
@@ -25,169 +58,30 @@ export default function Chatbot() {
     setMessages(updatedMessages);
 
     try {
-      // Get token for authenticated requests (optional according to API docs)
-      const token = await AsyncStorage.getItem("userToken");
+      // Simulate thinking delay
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // Create a temporary bot message for streaming
-      setMessages([
-        ...updatedMessages,
-        { role: "bot", message: "", isStreaming: true },
-      ]);
+      // Get local response
+      const botResponse = getLocalResponse(message);
 
-      // Use streaming endpoint
-      const response = await fetch(
-        "http://localhost:3000/api/chatbot/message?stream=true",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({ message }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`API request failed with status: ${response.status}`);
-      }
-
-      if (!response.body) {
-        throw new Error("ReadableStream not supported");
-      }
-
-      // Process the stream
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let streamedContent = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-
-        if (done) {
-          break;
-        }
-
-        // Decode the received chunk
-        const chunk = decoder.decode(value, { stream: true });
-
-        // Parse SSE data
-        const lines = chunk.split("\n\n");
-
-        for (const line of lines) {
-          if (line.startsWith("data:")) {
-            try {
-              const eventData = line.substring(5).trim();
-
-              // Check for end of stream
-              if (eventData === "[DONE]") {
-                continue;
-              }
-
-              const parsedData = JSON.parse(eventData);
-              if (parsedData.content) {
-                // Append the new content to our accumulated content
-                streamedContent += parsedData.content;
-
-                // Update the message in real-time
-                setMessages((currentMessages) => {
-                  const newMessages = [...currentMessages];
-                  newMessages[newMessages.length - 1] = {
-                    role: "bot",
-                    message: streamedContent,
-                    isStreaming: true,
-                  };
-                  return newMessages;
-                });
-              }
-            } catch (e) {
-              console.error("Error parsing SSE data:", e);
-            }
-          }
-        }
-      }
-
-      // Mark the message as complete (not streaming anymore)
-      setMessages((currentMessages) => {
-        const newMessages = [...currentMessages];
-        newMessages[newMessages.length - 1] = {
-          role: "bot",
-          message: streamedContent || "No response received.",
-        };
-        return newMessages;
-      });
+      // Add bot response
+      setMessages([...updatedMessages, { role: "bot", message: botResponse }]);
     } catch (error) {
       console.error("Error sending message:", error);
-      // Handle errors
-      setMessages((currentMessages) => {
-        // Find and replace the streaming message
-        const newMessages = [...currentMessages];
-        const lastIndex = newMessages.findIndex((m) => m.isStreaming);
-        if (lastIndex !== -1) {
-          newMessages[lastIndex] = {
-            role: "bot",
-            message: "Sorry, an error occurred. Please try again later.",
-          };
-        } else {
-          newMessages.push({
-            role: "bot",
-            message: "Sorry, an error occurred. Please try again later.",
-          });
-        }
-        return newMessages;
-      });
+      setMessages([
+        ...updatedMessages,
+        {
+          role: "bot",
+          message: "Maaf, terjadi kesalahan. Silakan coba lagi.",
+        },
+      ]);
     } finally {
       setLoading(false);
     }
   }
 
-  // Get financial insights
-  async function getInsights() {
-    setLoadingInsights(true);
-
-    try {
-      const token = await AsyncStorage.getItem("userToken");
-
-      if (!token) {
-        throw new Error("Authentication required for insights");
-      }
-
-      const response = await fetch(
-        "http://localhost:3000/api/chatbot/insights",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`API request failed with status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      // Add insights message to the chat
-      const insightsMessage =
-        data.data?.insights || "No insights available at this time.";
-      setMessages([...messages, { role: "bot", message: insightsMessage }]);
-    } catch (error) {
-      console.error("Error getting insights:", error);
-      setMessages([
-        ...messages,
-        {
-          role: "bot",
-          message:
-            "Sorry, couldn't retrieve financial insights. Please make sure you're logged in.",
-        },
-      ]);
-    } finally {
-      setLoadingInsights(false);
-    }
-  }
-
   return (
     <View style={styles.container}>
-      {" "}
       <Header title="Asisten Keuangan" />
       <ScrollView
         style={styles.chatContainer}
@@ -215,15 +109,6 @@ export default function Chatbot() {
         ))}
       </ScrollView>
       {/* Input Field */}
-      {/* <View style={styles.buttonContainer}>        <Button
-          onPress={getInsights}
-          disabled={loadingInsights}
-          loading={loadingInsights}
-          style={styles.insightsButton}
-        >
-          Dapatkan Wawasan Keuangan
-        </Button>
-      </View> */}
       <View style={styles.inputContainer}>
         <Input
           placeholder="Tanyakan apa saja tentang keuangan..."

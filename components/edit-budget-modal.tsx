@@ -15,6 +15,7 @@ import { Input } from "./input";
 import { CurrencyInput } from "./currency-input";
 import { Button } from "./button";
 import { colors } from "@/constants/colors";
+import { updateBudget } from "@/functions/localStorage";
 
 // Budget type from planning.tsx
 interface Budget {
@@ -123,26 +124,14 @@ export const EditBudgetModal = ({
         requestBody.endDate = endDate.toISOString();
       }
 
-      const response = await fetch(
-        `http://localhost:3000/api/budgets/${budget.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(requestBody),
-        }
-      );
+      const result = await updateBudget(token, budget.id, requestBody);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to update budget");
+      if (!result.success) {
+        throw new Error(result.message || "Failed to update budget");
       }
 
-      // According to API.md, the updated budget is in data.data
-      onUpdate(data.data);
+      // Update with the returned data
+      onUpdate(result.data!);
 
       // Close modal on success
       onClose();

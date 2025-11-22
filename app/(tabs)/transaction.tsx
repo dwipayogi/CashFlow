@@ -4,10 +4,14 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
+  RefreshControl,
+  Pressable,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { BarChart } from "react-native-gifted-charts";
-import { Link } from "expo-router";
-import { useEffect, useState } from "react";
+import { useRouter } from "expo-router";
+import { useCallback, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { Header } from "@/components/header";
@@ -37,38 +41,51 @@ interface Transaction {
 }
 
 export default function Transaction() {
+  const router = useRouter();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        const token = await AsyncStorage.getItem("userToken");
 
-        if (!token) {
-          throw new Error("No authentication token found");
-        }
+  const fetchTransactions = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem("userToken");
 
-        // Get transactions from local storage
-        const transactions = await getTransactions(token);
-
-        // Sort transactions by date (newest first)
-        const sortedTransactions = transactions.sort(
-          (a: Transaction, b: Transaction) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-
-        setTransactions(sortedTransactions);
-      } catch (err: any) {
-        console.error("Error fetching transactions:", err);
-        setError(err.message || "An error occurred");
-      } finally {
-        setLoading(false);
+      if (!token) {
+        throw new Error("No authentication token found");
       }
-    };
 
-    fetchTransactions();
+      // Get transactions from local storage
+      const transactions = await getTransactions(token);
+
+      // Sort transactions by date (newest first)
+      const sortedTransactions = transactions.sort(
+        (a: Transaction, b: Transaction) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+      setTransactions(sortedTransactions);
+      setError("");
+    } catch (err: any) {
+      console.error("Error fetching transactions:", err);
+      setError(err.message || "An error occurred");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      fetchTransactions();
+    }, [fetchTransactions])
+  );
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchTransactions();
+  }, [fetchTransactions]);
 
   // Group transactions by date
   const groupTransactionsByDate = (transactions: Transaction[]) => {
@@ -154,17 +171,23 @@ export default function Transaction() {
   };
   if (loading) {
     return (
-      <View style={[styles.container, styles.loadingContainer]}>
+      <SafeAreaView
+        style={[styles.container, styles.loadingContainer]}
+        edges={["top"]}
+      >
         <ActivityIndicator size="large" color={colors.primary} />
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (error) {
     return (
-      <View style={[styles.container, styles.errorContainer]}>
+      <SafeAreaView
+        style={[styles.container, styles.errorContainer]}
+        edges={["top"]}
+      >
         <Text style={styles.errorText}>Error: {error}</Text>
-      </View>
+      </SafeAreaView>
     );
   }
   const barData = generateChartData(transactions);
@@ -173,9 +196,19 @@ export default function Transaction() {
     groupTransactionsByDate(transactions);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <Header title="Statistik" />
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         <View style={styles.chart}>
           <BarChart
             data={barData}
@@ -246,10 +279,16 @@ export default function Transaction() {
           )}
         </View>
       </ScrollView>
-      <Link href="/add-transaction" asChild>
-        <Text style={styles.addTransactionButton}>Tambah Transaksi</Text>
-      </Link>
-    </View>
+      <Pressable
+        onPress={() => router.push("/add-transaction")}
+        style={({ pressed }) => [
+          styles.addTransactionButton,
+          pressed && { opacity: 0.8 },
+        ]}
+      >
+        <Text style={styles.buttonText}>Tambah Transaksi</Text>
+      </Pressable>
+    </SafeAreaView>
   );
 }
 
@@ -299,6 +338,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 12,
     alignItems: "center",
+  },
+  buttonText: {
     color: colors.dark,
     fontSize: 16,
     fontWeight: "bold",

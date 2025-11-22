@@ -1,6 +1,6 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import {
   Button,
   StyleSheet,
@@ -8,7 +8,9 @@ import {
   Image,
   TouchableOpacity,
   View,
+  Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { colors } from "@/constants/colors";
@@ -18,94 +20,104 @@ export default function Detection() {
   const [permission, requestPermission] = useCameraPermissions();
   const [cameraRef, setCameraRef] = useState<CameraView | null>(null);
 
+  const takePhoto = useCallback(async () => {
+    if (!cameraRef) return;
+
+    try {
+      const photo = await cameraRef.takePictureAsync();
+      if (photo) {
+        console.log("Photo taken:", photo.uri);
+        // TODO: Implement photo upload or processing
+        Alert.alert("Success", "Photo captured successfully!");
+
+        // Example: Display photo temporarily
+        // You can implement navigation to a review screen here
+      }
+    } catch (error) {
+      console.error("Error taking photo:", error);
+      Alert.alert("Error", "Failed to capture photo");
+    }
+  }, [cameraRef]);
+
+  const pickImage = useCallback(async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        quality: 1,
+      });
+
+      if (!result.canceled) {
+        console.log("Image selected:", result.assets[0].uri);
+        // TODO: Implement image processing
+        Alert.alert("Success", "Image selected successfully!");
+      }
+    } catch (error) {
+      console.error("Error picking image:", error);
+      Alert.alert("Error", "Failed to pick image");
+    }
+  }, []);
+
+  const toggleTorch = useCallback(() => {
+    setTorch((prev) => !prev);
+  }, []);
+
   if (!permission) {
-    return <View />;
+    return (
+      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.message}>Loading camera...</Text>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   if (!permission.granted) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.message}>
-          We need your permission to show the camera
-        </Text>
-        <Button onPress={requestPermission} title="grant permission" />
-      </View>
+      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+        <View style={styles.permissionContainer}>
+          <Text style={styles.message}>
+            We need your permission to show the camera
+          </Text>
+          <Button onPress={requestPermission} title="Grant permission" />
+        </View>
+      </SafeAreaView>
     );
   }
-
-  const takePhoto = async () => {
-    if (cameraRef) {
-      const photo = await cameraRef.takePictureAsync();
-      if (photo) {
-        console.log(photo);
-        return (
-          <View style={styles.container}>
-            <Image
-              source={{ uri: photo.uri }}
-              style={{ width: 200, height: 200 }}
-            />
-          </View>
-        );
-        // const data = new FormData();
-        // const response = await fetch(photo.uri);
-        // const blob = await response.blob();
-        // data.append("photo", blob, "photo.jpg");
-
-        // try {
-        //   const response = await fetch("http://localhost:8000/upload", {
-        //     method: "POST",
-        //     body: data,
-        //     headers: {
-        //       "Content-Type": "multipart/form-data",
-        //     },
-        //   });
-
-        //   if (response.ok) {
-        //     console.log("Image uploaded successfully");
-        //   } else {
-        //     console.log("Image upload failed");
-        //   }
-        // } catch (error) {
-        //   console.error("Error uploading image:", error);
-        // }
-      }
-    }
-  };
-
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      console.log(result); // Handle the selected image as needed
-    } else {
-      alert("No image selected");
-    }
-  };
 
   return (
     <View style={styles.container}>
       <CameraView
         style={styles.camera}
         facing="back"
-        ref={(ref) => setCameraRef(ref)}
+        ref={setCameraRef}
         enableTorch={torch}
       >
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.pickImageButton} onPress={pickImage}>
+          <TouchableOpacity
+            style={styles.pickImageButton}
+            onPress={pickImage}
+            activeOpacity={0.7}
+          >
             <Ionicons name="image" size={24} color="white" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.button} onPress={takePhoto}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={takePhoto}
+            activeOpacity={0.7}
+          >
             <View style={styles.captureButton} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.flashButton}
-            onPress={() => setTorch(torch === false ? true : false)}
+            onPress={toggleTorch}
+            activeOpacity={0.7}
           >
-            <Ionicons name="flash-sharp" size={24} color="white" />
+            <Ionicons
+              name={torch ? "flash" : "flash-off"}
+              size={24}
+              color="white"
+            />
           </TouchableOpacity>
         </View>
       </CameraView>
@@ -114,13 +126,26 @@ export default function Detection() {
 }
 
 const styles = StyleSheet.create({
-  message: {
-    textAlign: "center",
-    paddingBottom: 10,
-  },
   container: {
     flex: 1,
     backgroundColor: "#000",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  permissionContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  message: {
+    textAlign: "center",
+    paddingBottom: 10,
+    color: colors.white,
+    fontSize: 16,
   },
   camera: {
     flex: 1,

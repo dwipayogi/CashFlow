@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -6,8 +6,12 @@ import {
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
+  RefreshControl,
+  Pressable,
 } from "react-native";
-import { Link } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { Header } from "@/components/header";
@@ -37,156 +41,164 @@ interface Budget {
 }
 
 // Custom BudgetCard component with progress bar
-const BudgetCard = ({
-  budget,
-  onEdit,
-  onDelete,
-}: {
-  budget: Budget;
-  onEdit: (budget: Budget) => void;
-  onDelete: (id: string) => void;
-}) => {
-  const [expanded, setExpanded] = useState(false);
-  const progress = budget.amount / budget.target;
-  const progressPercentage = Math.min(Math.round(progress * 100), 100);
+const BudgetCard = React.memo(
+  ({
+    budget,
+    onEdit,
+    onDelete,
+  }: {
+    budget: Budget;
+    onEdit: (budget: Budget) => void;
+    onDelete: (id: string) => void;
+  }) => {
+    const [expanded, setExpanded] = useState(false);
+    const progress = budget.amount / budget.target;
+    const progressPercentage = Math.min(Math.round(progress * 100), 100);
 
-  return (
-    <TouchableOpacity
-      style={styles.budgetCard}
-      onPress={() => setExpanded(!expanded)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.budgetHeader}>
-        <Text style={styles.budgetTitle}>{budget.description}</Text>
-        <Text
-          style={[
-            styles.budgetAmount,
-            budget.type === "EXPENSE" ? styles.expenseText : styles.incomeText,
-          ]}
-        >
-          Rp {budget.target.toLocaleString("id-ID")}
-        </Text>
-      </View>
-      <View style={styles.budgetMeta}>
-        <Text style={styles.budgetCategory}>
-          {budget.categoryData?.name || "Tanpa kategori"}
-        </Text>
-        <Text style={styles.budgetDate}>
-          Hingga:{" "}
-          {budget.endDate
-            ? new Date(budget.endDate).toLocaleDateString()
-            : "Tanpa tanggal akhir"}
-        </Text>
-      </View>
-      <View style={styles.progressContainer}>
-        <View style={styles.progressBackground}>
-          <View
+    return (
+      <TouchableOpacity
+        style={styles.budgetCard}
+        onPress={() => setExpanded(!expanded)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.budgetHeader}>
+          <Text style={styles.budgetTitle}>{budget.description}</Text>
+          <Text
             style={[
-              styles.progressFill,
-              {
-                width: `${progressPercentage}%`,
-                backgroundColor:
-                  budget.type === "EXPENSE" ? colors.danger : colors.success,
-              },
+              styles.budgetAmount,
+              budget.type === "EXPENSE"
+                ? styles.expenseText
+                : styles.incomeText,
             ]}
-          />
+          >
+            Rp {budget.target.toLocaleString("id-ID")}
+          </Text>
         </View>
-        <Text style={styles.progressText}>
-          {progressPercentage}% ({budget.amount.toLocaleString("id-ID")} /{" "}
-          {budget.target.toLocaleString("id-ID")})
-        </Text>
-      </View>
-      {expanded && (
-        <View style={styles.expandedContent}>
-          <Text style={styles.expandedLabel}>Detail Progres</Text>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Jumlah Saat Ini:</Text>
-            <Text style={styles.detailValue}>
-              Rp {budget.amount.toLocaleString("id-ID")}
-            </Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Target Jumlah:</Text>
-            <Text style={styles.detailValue}>
-              Rp {budget.target.toLocaleString("id-ID")}
-            </Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Sisa:</Text>
-            <Text style={styles.detailValue}>
-              Rp {(budget.target - budget.amount).toLocaleString("id-ID")}
-            </Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Tipe:</Text>
-            <Text
+        <View style={styles.budgetMeta}>
+          <Text style={styles.budgetCategory}>
+            {budget.categoryData?.name || "Tanpa kategori"}
+          </Text>
+          <Text style={styles.budgetDate}>
+            Hingga:{" "}
+            {budget.endDate
+              ? new Date(budget.endDate).toLocaleDateString()
+              : "Tanpa tanggal akhir"}
+          </Text>
+        </View>
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBackground}>
+            <View
               style={[
-                styles.detailValue,
-                budget.type === "EXPENSE"
-                  ? styles.expenseText
-                  : styles.incomeText,
+                styles.progressFill,
+                {
+                  width: `${progressPercentage}%`,
+                  backgroundColor:
+                    budget.type === "EXPENSE" ? colors.danger : colors.success,
+                },
               ]}
-            >
-              {budget.type === "EXPENSE" ? "Budget Limit" : "Savings Goal"}
-            </Text>
+            />
           </View>
-          {budget.endDate && (
+          <Text style={styles.progressText}>
+            {progressPercentage}% ({budget.amount.toLocaleString("id-ID")} /{" "}
+            {budget.target.toLocaleString("id-ID")})
+          </Text>
+        </View>
+        {expanded && (
+          <View style={styles.expandedContent}>
+            <Text style={styles.expandedLabel}>Detail Progres</Text>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Tanggal Berakhir:</Text>
+              <Text style={styles.detailLabel}>Jumlah Saat Ini:</Text>
               <Text style={styles.detailValue}>
-                {new Date(budget.endDate).toLocaleDateString()}
+                Rp {budget.amount.toLocaleString("id-ID")}
               </Text>
             </View>
-          )}
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Dibuat:</Text>
-            <Text style={styles.detailValue}>
-              {new Date(budget.createdAt).toLocaleDateString()}
-            </Text>
-          </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Target Jumlah:</Text>
+              <Text style={styles.detailValue}>
+                Rp {budget.target.toLocaleString("id-ID")}
+              </Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Sisa:</Text>
+              <Text style={styles.detailValue}>
+                Rp {(budget.target - budget.amount).toLocaleString("id-ID")}
+              </Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Tipe:</Text>
+              <Text
+                style={[
+                  styles.detailValue,
+                  budget.type === "EXPENSE"
+                    ? styles.expenseText
+                    : styles.incomeText,
+                ]}
+              >
+                {budget.type === "EXPENSE" ? "Budget Limit" : "Savings Goal"}
+              </Text>
+            </View>
+            {budget.endDate && (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Tanggal Berakhir:</Text>
+                <Text style={styles.detailValue}>
+                  {new Date(budget.endDate).toLocaleDateString()}
+                </Text>
+              </View>
+            )}
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Dibuat:</Text>
+              <Text style={styles.detailValue}>
+                {new Date(budget.createdAt).toLocaleDateString()}
+              </Text>
+            </View>
 
-          <View style={styles.actionButtons}>
-            <TouchableOpacity
-              style={[styles.actionButton, styles.editButton]}
-              onPress={() => onEdit(budget)}
-            >
-              <Text style={styles.buttonText}>Ubah</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.actionButton, styles.deleteButton]}
-              onPress={() => onDelete(budget.id)}
-            >
-              <Text style={styles.buttonText}>Hapus</Text>
-            </TouchableOpacity>
+            <View style={styles.actionButtons}>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.editButton]}
+                onPress={() => onEdit(budget)}
+              >
+                <Text style={styles.buttonText}>Ubah</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.deleteButton]}
+                onPress={() => onDelete(budget.id)}
+              >
+                <Text style={styles.buttonText}>Hapus</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
-};
+        )}
+      </TouchableOpacity>
+    );
+  }
+);
+
+BudgetCard.displayName = "BudgetCard";
 
 export default function Planning() {
+  const router = useRouter();
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
 
   // Function to handle budget editing
-  const handleEditBudget = (budget: Budget) => {
+  const handleEditBudget = useCallback((budget: Budget) => {
     setSelectedBudget(budget);
     setEditModalVisible(true);
-  };
+  }, []);
 
   // Function to handle budget update after edit
-  const handleBudgetUpdate = (updatedBudget: Budget) => {
+  const handleBudgetUpdate = useCallback((updatedBudget: Budget) => {
     // Update the budget in the state
-    setBudgets(
-      budgets.map((b) => (b.id === updatedBudget.id ? updatedBudget : b))
+    setBudgets((prevBudgets) =>
+      prevBudgets.map((b) => (b.id === updatedBudget.id ? updatedBudget : b))
     );
-  };
+  }, []);
   // Function to delete a budget - directly perform the action without alerts
-  const handleDeleteBudget = async (budgetId: string) => {
+  const handleDeleteBudget = useCallback(async (budgetId: string) => {
     try {
       setLoading(true);
       const token = await AsyncStorage.getItem("userToken");
@@ -202,7 +214,7 @@ export default function Planning() {
       }
 
       // Remove the budget from state
-      setBudgets(budgets.filter((b) => b.id !== budgetId));
+      setBudgets((prevBudgets) => prevBudgets.filter((b) => b.id !== budgetId));
 
       // Success is indicated by the item being removed from the list
     } catch (err: any) {
@@ -212,45 +224,67 @@ export default function Planning() {
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    // Fetch budget data when component mounts
-    const fetchBudgets = async () => {
-      try {
-        setLoading(true);
-        // Get token for authenticated requests
-        const token = await AsyncStorage.getItem("userToken");
-
-        if (!token) {
-          throw new Error("No authentication token found");
-        }
-
-        // Fetch budgets from local storage
-        const budgets = await getBudgets(token);
-        setBudgets(budgets);
-      } catch (err: any) {
-        console.error("Error fetching budgets:", err);
-        setError(err.message || "An error occurred while fetching budgets");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchBudgets();
   }, []);
+
+  const fetchBudgets = useCallback(async () => {
+    try {
+      setLoading(true);
+      // Get token for authenticated requests
+      const token = await AsyncStorage.getItem("userToken");
+
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      // Fetch budgets from local storage
+      const budgets = await getBudgets(token);
+      setBudgets(budgets);
+      setError("");
+    } catch (err: any) {
+      console.error("Error fetching budgets:", err);
+      setError(err.message || "An error occurred while fetching budgets");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchBudgets();
+    }, [fetchBudgets])
+  );
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchBudgets();
+  }, [fetchBudgets]);
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.loadingContainer]}>
+      <SafeAreaView
+        style={[styles.container, styles.loadingContainer]}
+        edges={["top"]}
+      >
         <ActivityIndicator size="large" color={colors.primary} />
-      </View>
+      </SafeAreaView>
     );
   }
   return (
-    <>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <Header title="Anggaran" />
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <Header title="Anggaran" />
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         <View style={styles.content}>
           {error ? (
             <Text style={styles.errorText}>{error}</Text>
@@ -277,10 +311,16 @@ export default function Planning() {
         budget={selectedBudget}
         onUpdate={handleBudgetUpdate}
       />
-      <Link href="/add-plan" asChild>
-        <Text style={styles.addPlanButton}>Tambah Anggaran</Text>
-      </Link>
-    </>
+      <Pressable
+        onPress={() => router.push("/add-plan")}
+        style={({ pressed }) => [
+          styles.addPlanButton,
+          pressed && { opacity: 0.8 },
+        ]}
+      >
+        <Text style={styles.buttonText}>Tambah Anggaran</Text>
+      </Pressable>
+    </SafeAreaView>
   );
 }
 
@@ -288,10 +328,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.dark,
+  },
+  scrollView: {
+    flex: 1,
     padding: 20,
   },
   content: {
     gap: 12,
+    padding: 20,
   },
   addPlanButton: {
     position: "absolute",
@@ -302,6 +346,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 12,
     alignItems: "center",
+  },
+  buttonText: {
     color: colors.dark,
     fontSize: 16,
     fontWeight: "bold",
@@ -323,10 +369,6 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     backgroundColor: colors.danger,
-  },
-  buttonText: {
-    color: colors.light,
-    fontWeight: "bold",
   },
   loadingContainer: {
     justifyContent: "center",

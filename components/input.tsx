@@ -1,8 +1,9 @@
+import React from "react";
 import { TextInput, StyleSheet, TextInputProps } from "react-native";
 import { useState } from "react";
 import { colors } from "@/constants/colors";
 
-export const Input = ({ style, ...props }: TextInputProps) => {
+export const Input = React.memo(({ style, ...props }: TextInputProps) => {
   const [isFocused, setIsFocused] = useState(false);
 
   return (
@@ -14,7 +15,9 @@ export const Input = ({ style, ...props }: TextInputProps) => {
       {...props}
     />
   );
-};
+});
+
+Input.displayName = "Input";
 
 const styles = StyleSheet.create({
   input: {

@@ -1,5 +1,14 @@
-import { useState } from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { useState, useCallback, useRef, useEffect } from "react";
+import {
+  View,
+  StyleSheet,
+  FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ListRenderItem,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Markdown from "react-native-markdown-display";
 
 import { Header } from "@/components/header";
@@ -8,13 +17,20 @@ import { Button } from "@/components/button";
 
 import { colors } from "@/constants/colors";
 
+interface Message {
+  id: string;
+  role: "user" | "bot";
+  message: string;
+}
+
 export default function Chatbot() {
-  const [messages, setMessages] = useState<any[]>([]);
-  const [input, setInput] = useState({ role: "user", message: "" });
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const flatListRef = useRef<FlatList>(null);
 
   // Simple local chatbot responses
-  const getLocalResponse = (message: string): string => {
+  const getLocalResponse = useCallback((message: string): string => {
     const lowerMessage = message.toLowerCase();
 
     if (lowerMessage.includes("halo") || lowerMessage.includes("hai")) {
@@ -46,88 +62,137 @@ export default function Chatbot() {
 
     // Default response
     return "Terima kasih atas pertanyaan Anda. Sebagai asisten keuangan, saya dapat membantu dengan:\n\n- Tips membuat anggaran\n- Strategi menabung\n- Cara mengelola utang\n- Dasar-dasar investasi\n- Pengelolaan keuangan pribadi\n\nSilakan tanyakan topik spesifik yang ingin Anda ketahui!";
-  };
+  }, []);
 
   // Send message to local chatbot
-  async function sendMessage({ message }: { message: string }) {
-    if (!message) return;
-    setLoading(true);
+  const sendMessage = useCallback(
+    async (messageText: string) => {
+      if (!messageText.trim()) return;
 
-    // Add user message to the chat
-    const updatedMessages = [...messages, { role: "user", message }];
-    setMessages(updatedMessages);
+      Keyboard.dismiss();
+      setLoading(true);
 
-    try {
-      // Simulate thinking delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // Add user message to the chat
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        role: "user",
+        message: messageText,
+      };
 
-      // Get local response
-      const botResponse = getLocalResponse(message);
+      setMessages((prev) => [...prev, userMessage]);
 
-      // Add bot response
-      setMessages([...updatedMessages, { role: "bot", message: botResponse }]);
-    } catch (error) {
-      console.error("Error sending message:", error);
-      setMessages([
-        ...updatedMessages,
-        {
+      try {
+        // Simulate thinking delay
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        // Get local response
+        const botResponse = getLocalResponse(messageText);
+
+        // Add bot response
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "bot",
+          message: botResponse,
+        };
+
+        setMessages((prev) => [...prev, botMessage]);
+      } catch (error) {
+        console.error("Error sending message:", error);
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
           role: "bot",
           message: "Maaf, terjadi kesalahan. Silakan coba lagi.",
-        },
-      ]);
-    } finally {
-      setLoading(false);
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [getLocalResponse]
+  );
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
     }
-  }
+  }, [messages]);
+
+  const renderMessage: ListRenderItem<Message> = useCallback(
+    ({ item }) => (
+      <View
+        style={[
+          styles.messageBubble,
+          item.role === "user" ? styles.userMessage : styles.botMessage,
+        ]}
+      >
+        <Markdown style={markdownStyles}>{item.message}</Markdown>
+      </View>
+    ),
+    []
+  );
+
+  const renderHeader = useCallback(
+    () =>
+      messages.length === 0 ? (
+        <View style={styles.welcomeContainer}>
+          <Markdown style={markdownStyles}>
+            {`# Selamat datang di Asisten Keuangan!\n\nSaya bisa membantu Anda dengan:\n- Saran keuangan\n- Tips penganggaran\n- Strategi menabung\n- Memahami pola pengeluaran Anda\n\nSilakan tanyakan apa saja tentang keuangan Anda.`}
+          </Markdown>
+        </View>
+      ) : null,
+    [messages.length]
+  );
+
+  const handleSend = useCallback(() => {
+    if (input.trim()) {
+      sendMessage(input);
+      setInput("");
+    }
+  }, [input, sendMessage]);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <Header title="Asisten Keuangan" />
-      <ScrollView
-        style={styles.chatContainer}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
-        {messages.length === 0 && (
-          <View style={styles.welcomeContainer}>
-            <Markdown style={markdownStyles}>
-              {`# Selamat datang di Asisten Keuangan!\n\nSaya bisa membantu Anda dengan:\n- Saran keuangan\n- Tips penganggaran\n- Strategi menabung\n- Memahami pola pengeluaran Anda\n\nSilakan tanyakan apa saja tentang keuangan Anda.`}
-            </Markdown>
-          </View>
-        )}
-
-        {/* Messages */}
-        {messages.map((message, index) => (
-          <View
-            key={index}
-            style={[
-              styles.messageBubble,
-              message.role === "user" ? styles.userMessage : styles.botMessage,
-            ]}
-          >
-            <Markdown style={markdownStyles}>{message.message}</Markdown>
-          </View>
-        ))}
-      </ScrollView>
-      {/* Input Field */}
-      <View style={styles.inputContainer}>
-        <Input
-          placeholder="Tanyakan apa saja tentang keuangan..."
-          value={input.message}
-          onChangeText={(message) => setInput({ ...input, message })}
-          style={{ flex: 1 }}
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          renderItem={renderMessage}
+          keyExtractor={(item) => item.id}
+          ListHeaderComponent={renderHeader}
+          contentContainerStyle={styles.messagesList}
+          showsVerticalScrollIndicator={false}
+          onContentSizeChange={() =>
+            flatListRef.current?.scrollToEnd({ animated: true })
+          }
         />
-        <Button
-          onPress={() => {
-            sendMessage(input);
-            setInput({ ...input, message: "" });
-          }}
-          disabled={loading || !input.message.trim()}
-          loading={loading}
-        >
-          Kirim
-        </Button>
-      </View>
-    </View>
+        {/* Input Field */}
+        <View style={styles.inputContainer}>
+          <Input
+            placeholder="Tanyakan apa saja tentang keuangan..."
+            value={input}
+            onChangeText={setInput}
+            style={styles.input}
+            onSubmitEditing={handleSend}
+            returnKeyType="send"
+          />
+          <Button
+            onPress={handleSend}
+            disabled={loading || !input.trim()}
+            loading={loading}
+          >
+            Kirim
+          </Button>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -162,11 +227,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.dark,
+  },
+  keyboardView: {
+    flex: 1,
     padding: 20,
   },
-  chatContainer: {
-    flex: 1,
-    marginBottom: 10,
+  messagesList: {
+    flexGrow: 1,
+    paddingBottom: 10,
   },
   welcomeContainer: {
     backgroundColor: colors.gray,
@@ -193,11 +261,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    paddingTop: 10,
   },
-  buttonContainer: {
-    marginBottom: 12,
-  },
-  insightsButton: {
-    backgroundColor: colors.success,
+  input: {
+    flex: 1,
   },
 });

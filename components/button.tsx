@@ -1,8 +1,10 @@
+import React from "react";
 import {
   TouchableOpacity,
   Text,
   StyleSheet,
   TouchableOpacityProps,
+  ActivityIndicator,
 } from "react-native";
 import { colors } from "@/constants/colors";
 
@@ -12,25 +14,27 @@ interface ButtonProps extends TouchableOpacityProps {
   loading?: boolean;
 }
 
-export const Button = ({
-  children,
-  style,
-  textColor,
-  loading = false,
-  ...props
-}: ButtonProps) => {
-  return (
-    <TouchableOpacity
-      style={[styles.button, style]}
-      {...props}
-      disabled={loading || props.disabled}
-    >
-      <Text style={[styles.text, textColor ? { color: textColor } : null]}>
-        {loading ? "Loading..." : children}
-      </Text>
-    </TouchableOpacity>
-  );
-};
+export const Button = React.memo(
+  ({ children, style, textColor, loading = false, ...props }: ButtonProps) => {
+    return (
+      <TouchableOpacity
+        style={[styles.button, style]}
+        {...props}
+        disabled={loading || props.disabled}
+      >
+        <Text style={[styles.text, textColor ? { color: textColor } : null]}>
+          {loading ? (
+            <ActivityIndicator size="small" color={textColor || colors.dark} />
+          ) : (
+            children
+          )}
+        </Text>
+      </TouchableOpacity>
+    );
+  }
+);
+
+Button.displayName = "Button";
 
 const styles = StyleSheet.create({
   button: {

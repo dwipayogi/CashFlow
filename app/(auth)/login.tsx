@@ -8,7 +8,10 @@ import {
   Platform,
   ScrollView,
   Alert,
+  Pressable,
+  Keyboard,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -33,6 +36,7 @@ export default function Login() {
     try {
       setLoading(true);
       setError("");
+      Keyboard.dismiss();
 
       const result = await loginUser(email, password);
 
@@ -46,7 +50,7 @@ export default function Login() {
       // Store user info
       await AsyncStorage.setItem("userData", JSON.stringify(result.user));
 
-      router.push("/dashboard");
+      router.replace("/dashboard");
     } catch (err: any) {
       setError(err.message || "Failed to login. Please try again.");
       Alert.alert(
@@ -60,40 +64,55 @@ export default function Login() {
 
   if (loading)
     return (
-      <View style={styles.loading}>
+      <SafeAreaView style={styles.loading} edges={["top", "bottom"]}>
         <ActivityIndicator size="large" color={colors.primary} />
-      </View>
+      </SafeAreaView>
     );
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 50 : 0}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.title}>Login to an Account</Text>
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      >
+        <Pressable style={{ flex: 1 }} onPress={Keyboard.dismiss}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+          >
+            <Text style={styles.title}>Login to an Account</Text>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+            {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <Text style={styles.subtitle}>Email</Text>
-        <Input placeholder="Email" value={email} onChangeText={setEmail} />
-        <Text style={styles.subtitle}>Password</Text>
-        <Input
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-        <Button onPress={handleLogin}>Login</Button>
-        <Text style={styles.text}>
-          Don't have an account?{" "}
-          <Link href="/register" style={styles.link}>
-            Register
-          </Link>
-        </Text>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <Text style={styles.subtitle}>Email</Text>
+            <Input
+              placeholder="Email"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              autoComplete="email"
+            />
+            <Text style={styles.subtitle}>Password</Text>
+            <Input
+              placeholder="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoComplete="password"
+            />
+            <Button onPress={handleLogin}>Login</Button>
+            <Text style={styles.text}>
+              Don't have an account?{" "}
+              <Link href="/register" style={styles.link}>
+                Register
+              </Link>
+            </Text>
+          </ScrollView>
+        </Pressable>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

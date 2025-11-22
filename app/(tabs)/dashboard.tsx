@@ -4,8 +4,11 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { colors } from "@/constants/colors";
@@ -42,115 +45,144 @@ export default function Dashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [totalBalance, setTotalBalance] = useState(0);
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalExpense, setTotalExpense] = useState(0);
-  useEffect(() => {
-    // Fetch user data and transactions when component mounts
-    const fetchUserData = async () => {
-      try {
-        // Get stored user data
-        const userData = await AsyncStorage.getItem("userData");
-        if (userData) {
-          setUser(JSON.parse(userData));
-        }
 
-        // Get token for authenticated requests
-        const token = await AsyncStorage.getItem("userToken");
-
-        if (!token) {
-          throw new Error("No authentication token found");
-        }
-
-        // Fetch transactions from local storage
-        const transactions = await getTransactions(token);
-        setTransactions(transactions);
-
-        // Calculate totals
-        let income = 0;
-        let expense = 0;
-
-        transactions.forEach((transaction: Transaction) => {
-          if (transaction.type === "DEPOSIT") {
-            income += transaction.amount;
-          } else {
-            expense += transaction.amount;
-          }
-        });
-
-        setTotalIncome(income);
-        setTotalExpense(expense);
-        setTotalBalance(income - expense);
-      } catch (err: any) {
-        console.error("Error fetching data:", err);
-        setError(err.message || "An error occurred");
-      } finally {
-        setLoading(false);
+  const fetchUserData = useCallback(async () => {
+    try {
+      // Get stored user data
+      const userData = await AsyncStorage.getItem("userData");
+      if (userData) {
+        setUser(JSON.parse(userData));
       }
-    };
 
-    fetchUserData();
+      // Get token for authenticated requests
+      const token = await AsyncStorage.getItem("userToken");
+
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      // Fetch transactions from local storage
+      const transactions = await getTransactions(token);
+      setTransactions(transactions);
+
+      // Calculate totals
+      let income = 0;
+      let expense = 0;
+
+      transactions.forEach((transaction: Transaction) => {
+        if (transaction.type === "DEPOSIT") {
+          income += transaction.amount;
+        } else {
+          expense += transaction.amount;
+        }
+      });
+
+      setTotalIncome(income);
+      setTotalExpense(expense);
+      setTotalBalance(income - expense);
+      setError("");
+    } catch (err: any) {
+      console.error("Error fetching data:", err);
+      setError(err.message || "An error occurred");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      fetchUserData();
+    }, [fetchUserData])
+  );
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchUserData();
+  }, [fetchUserData]);
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.loadingContainer]}>
+      <SafeAreaView
+        style={[styles.container, styles.loadingContainer]}
+        edges={["top"]}
+      >
         <ActivityIndicator size="large" color={colors.primary} />
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (error) {
     return (
-      <View style={[styles.container, styles.errorContainer]}>
+      <SafeAreaView
+        style={[styles.container, styles.errorContainer]}
+        edges={["top"]}
+      >
         <Text style={styles.errorText}>Kesalahan: {error}</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Halo,</Text>
-        <Text style={styles.name}>{user?.username || "Pengguna"}</Text>
-      </View>
-      <View style={styles.content}>
-        <Text style={styles.balance}>Total Saldo</Text>
-        <Text style={styles.balanceAmount}>
-          Rp{totalBalance.toLocaleString("id-ID")}
-        </Text>
-        <View style={styles.income}>
-          <View style={styles.incomeItem}>
-            <Text style={styles.incomeTitle}>Pemasukan</Text>
-            <Text style={styles.incomeAmount}>
-              Rp{totalIncome.toLocaleString("id-ID")}
-            </Text>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.incomeItem}>
-            <Text style={styles.incomeTitle}>Pengeluaran</Text>
-            <Text style={styles.expenseAmount}>
-              Rp{totalExpense.toLocaleString("id-ID")}
-            </Text>
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
+        <View style={styles.header}>
+          <Text style={styles.title}>Halo,</Text>
+          <Text style={styles.name}>{user?.username || "Pengguna"}</Text>
+        </View>
+        <View style={styles.content}>
+          <Text style={styles.balance}>Total Saldo</Text>
+          <Text style={styles.balanceAmount}>
+            Rp{totalBalance.toLocaleString("id-ID")}
+          </Text>
+          <View style={styles.income}>
+            <View style={styles.incomeItem}>
+              <Text style={styles.incomeTitle}>Pemasukan</Text>
+              <Text style={styles.incomeAmount}>
+                Rp{totalIncome.toLocaleString("id-ID")}
+              </Text>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.incomeItem}>
+              <Text style={styles.incomeTitle}>Pengeluaran</Text>
+              <Text style={styles.expenseAmount}>
+                Rp{totalExpense.toLocaleString("id-ID")}
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
-      <View style={styles.transaction}>
-        <Text style={styles.transactionTitle}>Transaksi Terbaru</Text>
-        {transactions.length === 0 ? (
-          <Text style={styles.noTransactions}>
-            Tidak ada transaksi ditemukan
-          </Text>
-        ) : (
-          transactions
-            .slice(0, 5)
-            .map((transaction) => (
-              <Card key={transaction.id} transaction={transaction} />
-            ))
-        )}
-      </View>
-    </ScrollView>
+        <View style={styles.transaction}>
+          <Text style={styles.transactionTitle}>Transaksi Terbaru</Text>
+          {transactions.length === 0 ? (
+            <Text style={styles.noTransactions}>
+              Tidak ada transaksi ditemukan
+            </Text>
+          ) : (
+            transactions
+              .slice(0, 5)
+              .map((transaction) => (
+                <Card key={transaction.id} transaction={transaction} />
+              ))
+          )}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 

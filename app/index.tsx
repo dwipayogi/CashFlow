@@ -1,17 +1,25 @@
-import { StyleSheet, Text, View } from "react-native";
-
+import { StyleSheet, Text, Pressable } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "@/constants/colors";
-import { Link } from "expo-router";
+import { useRouter } from "expo-router";
 
 export default function App() {
+  const router = useRouter();
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>CashFLow</Text>
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+      <Text style={styles.title}>CashFlow</Text>
       <Text style={styles.subtitle}>Your Financial Intelligence Partner</Text>
-      <Link href="/register" asChild>
-        <Text style={styles.button}>Register</Text>
-      </Link>
-    </View>
+      <Pressable
+        onPress={() => router.push("/register")}
+        style={({ pressed }) => [
+          styles.button,
+          pressed && styles.buttonPressed,
+        ]}
+      >
+        <Text style={styles.buttonText}>Register</Text>
+      </Pressable>
+    </SafeAreaView>
   );
 }
 
@@ -37,9 +45,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 12,
+    alignItems: "center",
+  },
+  buttonPressed: {
+    opacity: 0.8,
+  },
+  buttonText: {
     color: colors.dark,
     fontSize: 16,
     fontWeight: "bold",
-    textAlign: "center",
   },
 });

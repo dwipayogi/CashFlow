@@ -1,13 +1,16 @@
+import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { colors } from "@/constants/colors";
 
-export function Header({ title }: { title: string }) {
+export const Header = React.memo(({ title }: { title: string }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{title}</Text>
     </View>
   );
-}
+});
+
+Header.displayName = "Header";
 
 const styles = StyleSheet.create({
   container: {
@@ -21,4 +24,3 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
 });
-

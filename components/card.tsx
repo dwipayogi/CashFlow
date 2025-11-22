@@ -1,3 +1,4 @@
+import React from "react";
 import { View, StyleSheet, Text } from "react-native";
 import { colors } from "@/constants/colors";
 
@@ -13,47 +14,51 @@ interface Transaction {
   updatedAt: string;
 }
 
-export const Card = ({ transaction }: { transaction: Transaction }) => {
-  const isExpense = transaction.type === "WITHDRAWAL";
+export const Card = React.memo(
+  ({ transaction }: { transaction: Transaction }) => {
+    const isExpense = transaction.type === "WITHDRAWAL";
 
-  return (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <View style={styles.cardHeaderLeft}>
-          <View
-            style={[
-              styles.icon,
-              isExpense ? styles.expenseIcon : styles.incomeIcon,
-            ]}
-          ></View>
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View style={styles.cardHeaderLeft}>
+            <View
+              style={[
+                styles.icon,
+                isExpense ? styles.expenseIcon : styles.incomeIcon,
+              ]}
+            ></View>
+            <View>
+              <Text style={styles.title}>{transaction.description}</Text>
+              <Text style={styles.date}>
+                {transaction.createdAt.split("T")[0]}
+              </Text>
+              {transaction.categoryName && (
+                <Text style={styles.category}>{transaction.categoryName}</Text>
+              )}
+            </View>
+          </View>
           <View>
-            <Text style={styles.title}>{transaction.description}</Text>
-            <Text style={styles.date}>
-              {transaction.createdAt.split("T")[0]}
+            <Text
+              style={[
+                styles.amount,
+                isExpense ? styles.expenseAmount : styles.incomeAmount,
+              ]}
+            >
+              {isExpense ? "-" : "+"}
+              {formatRupiah(transaction.amount)}
             </Text>
-            {transaction.categoryName && (
-              <Text style={styles.category}>{transaction.categoryName}</Text>
-            )}
+            <Text style={styles.type}>
+              {transaction.type === "DEPOSIT" ? "Income" : "Expense"}
+            </Text>
           </View>
         </View>
-        <View>
-          <Text
-            style={[
-              styles.amount,
-              isExpense ? styles.expenseAmount : styles.incomeAmount,
-            ]}
-          >
-            {isExpense ? "-" : "+"}
-            {formatRupiah(transaction.amount)}
-          </Text>
-          <Text style={styles.type}>
-            {transaction.type === "DEPOSIT" ? "Income" : "Expense"}
-          </Text>
-        </View>
       </View>
-    </View>
-  );
-};
+    );
+  }
+);
+
+Card.displayName = "Card";
 
 const styles = StyleSheet.create({
   card: {
